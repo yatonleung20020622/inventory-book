@@ -120,7 +120,7 @@ export async function createItem(input: {
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
     if (!name) {
-      return { ok: false, message: "Name is required." };
+      return { ok: false, message: "Item name is required." };
     }
     if (!Number.isFinite(quantity) || quantity < 0) {
       return { ok: false, message: "Quantity must be zero or greater." };
@@ -172,7 +172,7 @@ export async function updateItem(input: {
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
     if (!name) {
-      return { ok: false, message: "Name is required." };
+      return { ok: false, message: "Item name is required." };
     }
     if (!Number.isFinite(input.quantity) || input.quantity < 0) {
       return { ok: false, message: "Quantity must be zero or greater." };

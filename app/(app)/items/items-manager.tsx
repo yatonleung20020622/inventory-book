@@ -133,14 +133,22 @@ function ItemFormModal({
       <Form
         form={form}
         layout="vertical"
-        requiredMark={false}
+        requiredMark="optional"
         onFinish={onSubmit}
         initialValues={emptyFormValues}
       >
         <Form.Item
           label="Name"
           name="name"
-          rules={[{ required: true, message: "Name is required" }]}
+          required
+          rules={[
+            {
+              validator: (_, value: string) =>
+                value?.trim()
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("Item name is required")),
+            },
+          ]}
         >
           <Input placeholder="USB-C 充電線" />
         </Form.Item>

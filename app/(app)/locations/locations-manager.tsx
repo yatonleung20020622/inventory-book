@@ -99,14 +99,22 @@ function LocationFormModal({
       <Form
         form={form}
         layout="vertical"
-        requiredMark={false}
+        requiredMark="optional"
         onFinish={onSubmit}
         initialValues={emptyFormValues}
       >
         <Form.Item
           label="Name"
           name="name"
-          rules={[{ required: true, message: "Name is required" }]}
+          required
+          rules={[
+            {
+              validator: (_, value: string) =>
+                value?.trim()
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("Location name is required")),
+            },
+          ]}
         >
           <Input placeholder="Home" />
         </Form.Item>

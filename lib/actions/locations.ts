@@ -92,7 +92,7 @@ export async function createLocation(input: {
     const isExpired = Boolean(input.isExpired);
 
     if (!name) {
-      return { ok: false, message: "Name is required." };
+      return { ok: false, message: "Location name is required." };
     }
 
     const count = await prisma.location.count({ where: { userId } });
@@ -140,7 +140,7 @@ export async function updateLocation(input: {
     const isDefault = Boolean(input.isDefault);
 
     if (!name) {
-      return { ok: false, message: "Name is required." };
+      return { ok: false, message: "Location name is required." };
     }
 
     if (isDefault) {
