@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `Item` ADD COLUMN `boughtYear` VARCHAR(191) NOT NULL DEFAULT '',
+    ADD COLUMN `estimatedPrice` VARCHAR(191) NOT NULL DEFAULT '',
+    ADD COLUMN `remarks` TEXT NOT NULL DEFAULT '';

@@ -17,15 +17,18 @@ model User {
 }
 
 model Item {
-  id        String   @id @default(cuid())
-  name      String
-  desc      String   @default("") @db.Text
-  quantity  Int      @default(1)
-  unit      String   @default("個")
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  desc           String   @default("") @db.Text
+  quantity       Int      @default(1)
+  unit           String   @default("個")
+  estimatedPrice String   @default("")
+  boughtYear     String   @default("")
+  remarks        String   @default("") @db.Text
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId])
 }

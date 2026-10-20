@@ -30,10 +30,23 @@ type ItemFormValues = {
   desc: string;
   quantity: number;
   unit: string;
+  estimatedPrice: string;
+  boughtYear: string;
+  remarks: string;
 };
 
 type ItemsManagerProps = {
   items: ItemRecord[];
+};
+
+const emptyFormValues: ItemFormValues = {
+  name: "",
+  desc: "",
+  quantity: 1,
+  unit: "個",
+  estimatedPrice: "",
+  boughtYear: "",
+  remarks: "",
 };
 
 export function ItemsManager({ items }: ItemsManagerProps) {
@@ -51,10 +64,13 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         desc: editing.desc,
         quantity: editing.quantity,
         unit: editing.unit,
+        estimatedPrice: editing.estimatedPrice,
+        boughtYear: editing.boughtYear,
+        remarks: editing.remarks,
       });
       return;
     }
-    form.setFieldsValue({ name: "", desc: "", quantity: 1, unit: "個" });
+    form.setFieldsValue(emptyFormValues);
   }, [open, editing, form]);
 
   function openCreate() {
@@ -74,20 +90,19 @@ export function ItemsManager({ items }: ItemsManagerProps) {
 
   function onSubmit(values: ItemFormValues) {
     startTransition(async () => {
+      const payload = {
+        name: values.name,
+        desc: values.desc,
+        quantity: values.quantity,
+        unit: values.unit,
+        estimatedPrice: values.estimatedPrice,
+        boughtYear: values.boughtYear,
+        remarks: values.remarks,
+      };
+
       const result = editing
-        ? await updateItem({
-            id: editing.id,
-            name: values.name,
-            desc: values.desc,
-            quantity: values.quantity,
-            unit: values.unit,
-          })
-        : await createItem({
-            name: values.name,
-            desc: values.desc,
-            quantity: values.quantity,
-            unit: values.unit,
-          });
+        ? await updateItem({ id: editing.id, ...payload })
+        : await createItem(payload);
 
       if (!result.ok) {
         message.error(result.message);
@@ -133,30 +148,52 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         dataSource={items}
         loading={pending}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1100 }}
         columns={[
           {
             title: "Name",
             dataIndex: "name",
+            fixed: "left",
+            width: 160,
           },
           {
             title: "Desc",
             dataIndex: "desc",
             ellipsis: true,
+            width: 180,
           },
           {
             title: "Quantity",
             dataIndex: "quantity",
-            width: 120,
+            width: 100,
           },
           {
             title: "Unit",
             dataIndex: "unit",
-            width: 100,
+            width: 80,
+          },
+          {
+            title: "Est. price",
+            dataIndex: "estimatedPrice",
+            width: 120,
+            ellipsis: true,
+          },
+          {
+            title: "Bought year",
+            dataIndex: "boughtYear",
+            width: 110,
+          },
+          {
+            title: "Remarks",
+            dataIndex: "remarks",
+            ellipsis: true,
+            width: 180,
           },
           {
             title: "Actions",
             key: "actions",
             width: 160,
+            fixed: "right",
             render: (_, record) => (
               <Space>
                 <Button
@@ -198,7 +235,7 @@ export function ItemsManager({ items }: ItemsManagerProps) {
           layout="vertical"
           requiredMark={false}
           onFinish={onSubmit}
-          initialValues={{ name: "", desc: "", quantity: 1, unit: "個" }}
+          initialValues={emptyFormValues}
         >
           <Form.Item
             label="Name"
@@ -209,7 +246,7 @@ export function ItemsManager({ items }: ItemsManagerProps) {
           </Form.Item>
           <Form.Item label="Desc" name="desc">
             <Input.TextArea
-              rows={3}
+              rows={2}
               placeholder="Optional description"
               maxLength={1000}
               showCount
@@ -228,6 +265,20 @@ export function ItemsManager({ items }: ItemsManagerProps) {
             rules={[{ required: true, message: "Unit is required" }]}
           >
             <Input placeholder="個" />
+          </Form.Item>
+          <Form.Item label="Estimated price" name="estimatedPrice">
+            <Input placeholder="e.g. 120 HKD" />
+          </Form.Item>
+          <Form.Item label="Bought year" name="boughtYear">
+            <Input placeholder="e.g. 2024" />
+          </Form.Item>
+          <Form.Item label="Remarks" name="remarks">
+            <Input.TextArea
+              rows={2}
+              placeholder="Optional remarks"
+              maxLength={1000}
+              showCount
+            />
           </Form.Item>
         </Form>
       </Modal>

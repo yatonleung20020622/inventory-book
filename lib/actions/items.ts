@@ -10,6 +10,9 @@ export type ItemRecord = {
   desc: string;
   quantity: number;
   unit: string;
+  estimatedPrice: string;
+  boughtYear: string;
+  remarks: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -17,6 +20,19 @@ export type ItemRecord = {
 export type ItemActionResult = {
   ok: boolean;
   message: string;
+};
+
+type ItemRow = {
+  id: string;
+  name: string;
+  desc: string;
+  quantity: number;
+  unit: string;
+  estimatedPrice: string;
+  boughtYear: string;
+  remarks: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 async function requireUserId() {
@@ -27,21 +43,16 @@ async function requireUserId() {
   return session.user.id;
 }
 
-function toItemRecord(item: {
-  id: string;
-  name: string;
-  desc: string;
-  quantity: number;
-  unit: string;
-  createdAt: Date;
-  updatedAt: Date;
-}): ItemRecord {
+function toItemRecord(item: ItemRow): ItemRecord {
   return {
     id: item.id,
     name: item.name,
     desc: item.desc,
     quantity: item.quantity,
     unit: item.unit,
+    estimatedPrice: item.estimatedPrice,
+    boughtYear: item.boughtYear,
+    remarks: item.remarks,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
@@ -61,6 +72,9 @@ export async function createItem(input: {
   desc?: string;
   quantity?: number;
   unit?: string;
+  estimatedPrice?: string;
+  boughtYear?: string;
+  remarks?: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -68,6 +82,9 @@ export async function createItem(input: {
     const desc = (input.desc ?? "").trim();
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
+    const estimatedPrice = (input.estimatedPrice ?? "").trim();
+    const boughtYear = (input.boughtYear ?? "").trim();
+    const remarks = (input.remarks ?? "").trim();
 
     if (!name) {
       return { ok: false, message: "Name is required." };
@@ -82,6 +99,9 @@ export async function createItem(input: {
         desc,
         quantity: Math.floor(quantity),
         unit,
+        estimatedPrice,
+        boughtYear,
+        remarks,
         userId,
       },
     });
@@ -99,12 +119,18 @@ export async function updateItem(input: {
   desc: string;
   quantity: number;
   unit: string;
+  estimatedPrice: string;
+  boughtYear: string;
+  remarks: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
     const name = input.name.trim();
     const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
+    const estimatedPrice = input.estimatedPrice.trim();
+    const boughtYear = input.boughtYear.trim();
+    const remarks = input.remarks.trim();
 
     if (!name) {
       return { ok: false, message: "Name is required." };
@@ -120,6 +146,9 @@ export async function updateItem(input: {
         desc,
         quantity: Math.floor(input.quantity),
         unit,
+        estimatedPrice,
+        boughtYear,
+        remarks,
       },
     });
 
