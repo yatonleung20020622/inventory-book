@@ -11,6 +11,7 @@ import Text from "antd/es/typography/Text";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const { Sider, Content, Header } = Layout;
 
@@ -41,8 +42,9 @@ const navItems = [
 export function AppShell({ email, signOutAction, children }: AppShellProps) {
   const pathname = usePathname();
   const selectedKey =
-    navItems.find((item) => pathname === item.key || pathname.startsWith(`${item.key}/`))
-      ?.key ?? "/dashboard";
+    navItems.find(
+      (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
+    )?.key ?? "/dashboard";
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -50,7 +52,7 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
         breakpoint="lg"
         collapsedWidth={64}
         width={220}
-        style={{ background: "#001529" }}
+        style={{ background: "var(--sider-bg)" }}
       >
         <div
           style={{
@@ -71,35 +73,43 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
           mode="inline"
           selectedKeys={[selectedKey]}
           items={navItems}
-          style={{ borderInlineEnd: 0 }}
+          style={{ borderInlineEnd: 0, background: "transparent" }}
         />
       </Sider>
       <Layout>
         <Header
           style={{
-            background: "#fff",
+            background: "var(--header-bg)",
             paddingInline: 24,
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: 16,
-            borderBottom: "1px solid #f0f0f0",
+            gap: 12,
+            borderBottom: "1px solid var(--border-color)",
           }}
         >
-          <Text type="secondary">{email}</Text>
+          <ThemeToggle />
+          <Text style={{ color: "var(--muted)" }}>{email}</Text>
           <form action={signOutAction}>
             <Button htmlType="submit" icon={<LogoutOutlined />}>
               Sign out
             </Button>
           </form>
         </Header>
-        <Content style={{ padding: 24, background: "#f5f5f5", minHeight: 280 }}>
+        <Content
+          style={{
+            padding: 24,
+            background: "var(--page-bg)",
+            minHeight: 280,
+          }}
+        >
           <div
             style={{
-              background: "#fff",
+              background: "var(--card-bg)",
               padding: 24,
               borderRadius: 8,
               minHeight: "100%",
+              color: "var(--foreground)",
             }}
           >
             {children}

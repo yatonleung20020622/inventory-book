@@ -1,22 +1,20 @@
 "use client";
 
 import { AntdRegistry } from "@ant-design/nextjs-registry";
-import { ConfigProvider } from "antd";
 import type { ReactNode } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
+import type { ThemeMode } from "@/lib/theme";
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({
+  children,
+  initialTheme,
+}: {
+  children: ReactNode;
+  initialTheme: ThemeMode;
+}) {
   return (
     <AntdRegistry>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "#1677ff",
-            fontFamily: "var(--font-geist-sans), sans-serif",
-          },
-        }}
-      >
-        {children}
-      </ConfigProvider>
+      <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
     </AntdRegistry>
   );
 }
