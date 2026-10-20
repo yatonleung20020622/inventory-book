@@ -88,3 +88,7 @@ body {
 [data-theme="light"] .ant-table-wrapper .ant-table-thead .ant-table-cell {
   background: #fafafa !important;
 }
+
+.ant-layout-sider-children {
+  height: 100%;
+}

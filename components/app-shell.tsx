@@ -9,14 +9,14 @@ import {
   MenuUnfoldOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Button, Drawer, Grid, Layout, Menu } from "antd";
+import { Button, Drawer, Grid, Layout, Menu, Tooltip } from "antd";
 import Text from "antd/es/typography/Text";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const { Sider, Content, Header } = Layout;
+const { Sider, Content, Header, Footer } = Layout;
 const { useBreakpoint } = Grid;
 
 type AppShellProps = {
@@ -36,24 +36,30 @@ const navItems = [
     icon: <AppstoreOutlined />,
     label: "Items",
   },
-  {
-    key: "/profile",
-    icon: <UserOutlined />,
-    label: "Profile",
-  },
 ];
 
 function SideNav({
+  email,
   selectedKey,
   collapsed,
   onNavigate,
 }: {
+  email: string;
   selectedKey: string;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
+  const profileActive = selectedKey === "/profile";
+
   return (
-    <>
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
+      }}
+    >
       <div
         style={{
           height: 64,
@@ -63,6 +69,7 @@ function SideNav({
           justifyContent: collapsed ? "center" : "flex-start",
           overflow: "hidden",
           whiteSpace: "nowrap",
+          flexShrink: 0,
         }}
       >
         <Link href="/dashboard" onClick={onNavigate}>
@@ -77,10 +84,13 @@ function SideNav({
           </Text>
         </Link>
       </div>
+
       <Menu
         theme="dark"
         mode="inline"
-        selectedKeys={[selectedKey]}
+        selectedKeys={
+          selectedKey === "/profile" ? [] : selectedKey ? [selectedKey] : []
+        }
         items={navItems.map((item) => ({
           ...item,
           label: (
@@ -89,9 +99,59 @@ function SideNav({
             </Link>
           ),
         }))}
-        style={{ borderInlineEnd: 0, background: "transparent" }}
+        style={{
+          borderInlineEnd: 0,
+          background: "transparent",
+          flex: 1,
+          minHeight: 0,
+        }}
       />
-    </>
+
+      <div
+        style={{
+          flexShrink: 0,
+          padding: collapsed ? "12px 8px" : "12px 12px",
+          borderTop: "1px solid rgba(255,255,255,0.12)",
+        }}
+      >
+        <Tooltip title={email} placement="right">
+          <Link
+            href="/profile"
+            onClick={onNavigate}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: 10,
+              padding: collapsed ? "10px 0" : "10px 12px",
+              borderRadius: 8,
+              background: profileActive
+                ? "rgba(22, 119, 255, 0.85)"
+                : "transparent",
+              color: "#fff",
+              textDecoration: "none",
+              overflow: "hidden",
+            }}
+          >
+            <UserOutlined style={{ fontSize: 16, flexShrink: 0 }} />
+            {!collapsed ? (
+              <Text
+                style={{
+                  color: "#fff",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {email}
+              </Text>
+            ) : null}
+          </Link>
+        </Tooltip>
+      </div>
+    </div>
   );
 }
 
@@ -102,13 +162,13 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Avoid SSR/client breakpoint mismatch; treat as desktop until mounted.
   const isMobile = mounted ? !screens.lg : false;
 
-  const selectedKey =
-    navItems.find(
-      (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
-    )?.key ?? "/dashboard";
+  const selectedKey = pathname.startsWith("/profile")
+    ? "/profile"
+    : (navItems.find(
+        (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
+      )?.key ?? "/dashboard");
 
   useEffect(() => {
     setMounted(true);
@@ -136,7 +196,13 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
           collapsedWidth={80}
           style={{ background: "var(--sider-bg)" }}
         >
-          <SideNav selectedKey={selectedKey} collapsed={collapsed} />
+          <div style={{ height: "100%" }}>
+            <SideNav
+              email={email}
+              selectedKey={selectedKey}
+              collapsed={collapsed}
+            />
+          </div>
         </Sider>
       ) : null}
 
@@ -144,9 +210,15 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
         placement="left"
         open={isMobile && drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={240}
+        size={240}
         styles={{
-          body: { padding: 0, background: "var(--sider-bg)" },
+          body: {
+            padding: 0,
+            background: "var(--sider-bg)",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          },
           header: {
             background: "var(--sider-bg)",
             borderBottom: "1px solid rgba(255,255,255,0.12)",
@@ -158,6 +230,7 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
         closeIcon={<span style={{ color: "#fff" }}>×</span>}
       >
         <SideNav
+          email={email}
           selectedKey={selectedKey}
           onNavigate={() => setDrawerOpen(false)}
         />
@@ -207,19 +280,6 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
             }}
           >
             <ThemeToggle />
-            {!isMobile ? (
-              <Text
-                style={{
-                  color: "var(--muted)",
-                  maxWidth: 220,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {email}
-              </Text>
-            ) : null}
             <form action={signOutAction}>
               <Button
                 htmlType="submit"
@@ -250,6 +310,40 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
             {children}
           </div>
         </Content>
+        <Footer
+          style={{
+            textAlign: "center",
+            background: "var(--page-bg)",
+            color: "var(--muted)",
+            padding: "12px 24px 20px",
+            fontSize: 13,
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "0 10px",
+              rowGap: 6,
+            }}
+          >
+            <Link href="/terms" style={{ color: "var(--muted)" }}>
+              Terms
+            </Link>
+            <span aria-hidden style={{ opacity: 0.45 }}>
+              |
+            </span>
+            <Link href="/privacy" style={{ color: "var(--muted)" }}>
+              Privacy
+            </Link>
+            <span aria-hidden style={{ opacity: 0.45 }}>
+              |
+            </span>
+            <span>Created by AndrewL. All rights reserved.</span>
+          </div>
+        </Footer>
       </Layout>
     </Layout>
   );

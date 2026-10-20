@@ -4,6 +4,7 @@ import { Alert, Button, Card, Form, Input } from "antd";
 import Paragraph from "antd/es/typography/Paragraph";
 import Title from "antd/es/typography/Title";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -81,7 +82,7 @@ export function LoginForm() {
           <Input.Password autoComplete="current-password" size="large" />
         </Form.Item>
 
-        <Form.Item style={{ marginBottom: 0 }}>
+        <Form.Item style={{ marginBottom: 8 }}>
           <Button
             type="primary"
             htmlType="submit"
@@ -93,6 +94,15 @@ export function LoginForm() {
           </Button>
         </Form.Item>
       </Form>
+
+      <Paragraph
+        type="secondary"
+        style={{ marginBottom: 0, marginTop: 8, textAlign: "center", fontSize: 13 }}
+      >
+        <Link href="/terms">Terms</Link>
+        {" · "}
+        <Link href="/privacy">Privacy</Link>
+      </Paragraph>
     </Card>
   );
 }
