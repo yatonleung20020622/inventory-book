@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AppstoreOutlined,
   DashboardOutlined,
   LogoutOutlined,
   UserOutlined,
@@ -24,6 +25,11 @@ const navItems = [
     key: "/dashboard",
     icon: <DashboardOutlined />,
     label: <Link href="/dashboard">Dashboard</Link>,
+  },
+  {
+    key: "/items",
+    icon: <AppstoreOutlined />,
+    label: <Link href="/items">Items</Link>,
   },
   {
     key: "/profile",

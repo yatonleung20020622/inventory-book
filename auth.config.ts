@@ -28,6 +28,7 @@ export const authConfig = {
 
       if (
         pathname.startsWith("/dashboard") ||
+        pathname.startsWith("/items") ||
         pathname.startsWith("/profile")
       ) {
         return isLoggedIn;
