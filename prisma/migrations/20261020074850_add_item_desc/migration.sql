@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Item` ADD COLUMN `desc` TEXT NOT NULL DEFAULT '';

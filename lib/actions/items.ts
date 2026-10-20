@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 export type ItemRecord = {
   id: string;
   name: string;
+  desc: string;
   quantity: number;
   unit: string;
   createdAt: string;
@@ -29,6 +30,7 @@ async function requireUserId() {
 function toItemRecord(item: {
   id: string;
   name: string;
+  desc: string;
   quantity: number;
   unit: string;
   createdAt: Date;
@@ -37,6 +39,7 @@ function toItemRecord(item: {
   return {
     id: item.id,
     name: item.name,
+    desc: item.desc,
     quantity: item.quantity,
     unit: item.unit,
     createdAt: item.createdAt.toISOString(),
@@ -55,12 +58,14 @@ export async function listItems(): Promise<ItemRecord[]> {
 
 export async function createItem(input: {
   name: string;
+  desc?: string;
   quantity?: number;
   unit?: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
     const name = input.name.trim();
+    const desc = (input.desc ?? "").trim();
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
 
@@ -74,6 +79,7 @@ export async function createItem(input: {
     await prisma.item.create({
       data: {
         name,
+        desc,
         quantity: Math.floor(quantity),
         unit,
         userId,
@@ -90,12 +96,14 @@ export async function createItem(input: {
 export async function updateItem(input: {
   id: string;
   name: string;
+  desc: string;
   quantity: number;
   unit: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
     const name = input.name.trim();
+    const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
 
     if (!name) {
@@ -109,6 +117,7 @@ export async function updateItem(input: {
       where: { id: input.id, userId },
       data: {
         name,
+        desc,
         quantity: Math.floor(input.quantity),
         unit,
       },

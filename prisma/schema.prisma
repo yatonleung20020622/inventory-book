@@ -19,6 +19,7 @@ model User {
 model Item {
   id        String   @id @default(cuid())
   name      String
+  desc      String   @default("") @db.Text
   quantity  Int      @default(1)
   unit      String   @default("個")
   userId    String

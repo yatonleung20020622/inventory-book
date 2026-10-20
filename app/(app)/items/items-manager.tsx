@@ -27,6 +27,7 @@ import {
 
 type ItemFormValues = {
   name: string;
+  desc: string;
   quantity: number;
   unit: string;
 };
@@ -47,12 +48,13 @@ export function ItemsManager({ items }: ItemsManagerProps) {
     if (editing) {
       form.setFieldsValue({
         name: editing.name,
+        desc: editing.desc,
         quantity: editing.quantity,
         unit: editing.unit,
       });
       return;
     }
-    form.setFieldsValue({ name: "", quantity: 1, unit: "個" });
+    form.setFieldsValue({ name: "", desc: "", quantity: 1, unit: "個" });
   }, [open, editing, form]);
 
   function openCreate() {
@@ -76,11 +78,13 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         ? await updateItem({
             id: editing.id,
             name: values.name,
+            desc: values.desc,
             quantity: values.quantity,
             unit: values.unit,
           })
         : await createItem({
             name: values.name,
+            desc: values.desc,
             quantity: values.quantity,
             unit: values.unit,
           });
@@ -133,6 +137,11 @@ export function ItemsManager({ items }: ItemsManagerProps) {
           {
             title: "Name",
             dataIndex: "name",
+          },
+          {
+            title: "Desc",
+            dataIndex: "desc",
+            ellipsis: true,
           },
           {
             title: "Quantity",
@@ -189,7 +198,7 @@ export function ItemsManager({ items }: ItemsManagerProps) {
           layout="vertical"
           requiredMark={false}
           onFinish={onSubmit}
-          initialValues={{ name: "", quantity: 1, unit: "個" }}
+          initialValues={{ name: "", desc: "", quantity: 1, unit: "個" }}
         >
           <Form.Item
             label="Name"
@@ -197,6 +206,14 @@ export function ItemsManager({ items }: ItemsManagerProps) {
             rules={[{ required: true, message: "Name is required" }]}
           >
             <Input placeholder="USB-C 充電線" />
+          </Form.Item>
+          <Form.Item label="Desc" name="desc">
+            <Input.TextArea
+              rows={3}
+              placeholder="Optional description"
+              maxLength={1000}
+              showCount
+            />
           </Form.Item>
           <Form.Item
             label="Quantity"
