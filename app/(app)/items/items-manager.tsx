@@ -12,9 +12,10 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
+  Select,
   Space,
   Table,
-  message,
+  App,
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -25,6 +26,24 @@ import {
   type ItemRecord,
 } from "@/lib/actions/items";
 
+type LocationOption = {
+  id: string;
+  name: string;
+  isExpired: boolean;
+  isDefault: boolean;
+};
+
+function getDefaultLocationId(locations: LocationOption[]): string | null {
+  const markedDefault = locations.find((location) => location.isDefault);
+  if (markedDefault) {
+    return markedDefault.id;
+  }
+  if (locations.length === 1) {
+    return locations[0].id;
+  }
+  return null;
+}
+
 type ItemFormValues = {
   name: string;
   desc: string;
@@ -33,10 +52,12 @@ type ItemFormValues = {
   estimatedPrice: string;
   boughtYear: string;
   remarks: string;
+  locationId: string | null;
 };
 
 type ItemsManagerProps = {
   items: ItemRecord[];
+  locations: LocationOption[];
 };
 
 const emptyFormValues: ItemFormValues = {
@@ -47,13 +68,24 @@ const emptyFormValues: ItemFormValues = {
   estimatedPrice: "",
   boughtYear: "",
   remarks: "",
+  locationId: null,
 };
 
-export function ItemsManager({ items }: ItemsManagerProps) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<ItemRecord | null>(null);
+function ItemFormModal({
+  open,
+  editing,
+  pending,
+  locations,
+  onCancel,
+  onSubmit,
+}: {
+  open: boolean;
+  editing: ItemRecord | null;
+  pending: boolean;
+  locations: LocationOption[];
+  onCancel: () => void;
+  onSubmit: (values: ItemFormValues) => void;
+}) {
   const [form] = Form.useForm<ItemFormValues>();
 
   useEffect(() => {
@@ -67,11 +99,110 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         estimatedPrice: editing.estimatedPrice,
         boughtYear: editing.boughtYear,
         remarks: editing.remarks,
+        locationId: editing.locationId,
       });
       return;
     }
-    form.setFieldsValue(emptyFormValues);
-  }, [open, editing, form]);
+    form.setFieldsValue({
+      ...emptyFormValues,
+      locationId: getDefaultLocationId(locations),
+    });
+  }, [open, editing, form, locations]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <Modal
+      title={editing ? "Edit item" : "Add item"}
+      open={open}
+      onCancel={onCancel}
+      onOk={() => form.submit()}
+      confirmLoading={pending}
+      okText={editing ? "Save" : "Create"}
+      destroyOnHidden
+      styles={{
+        body: {
+          maxHeight: "min(60vh, 480px)",
+          overflowY: "auto",
+          paddingRight: 4,
+        },
+      }}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        requiredMark={false}
+        onFinish={onSubmit}
+        initialValues={emptyFormValues}
+      >
+        <Form.Item
+          label="Name"
+          name="name"
+          rules={[{ required: true, message: "Name is required" }]}
+        >
+          <Input placeholder="USB-C 充電線" />
+        </Form.Item>
+        <Form.Item label="Location" name="locationId">
+          <Select
+            allowClear
+            placeholder="Select a location"
+            options={locations.map((location) => ({
+              value: location.id,
+              label: location.isExpired
+                ? `${location.name} (expired)`
+                : location.name,
+            }))}
+          />
+        </Form.Item>
+        <Form.Item label="Desc" name="desc">
+          <Input.TextArea
+            rows={2}
+            placeholder="Optional description"
+            maxLength={1000}
+            showCount
+          />
+        </Form.Item>
+        <Form.Item
+          label="Quantity"
+          name="quantity"
+          rules={[{ required: true, message: "Quantity is required" }]}
+        >
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          label="Unit"
+          name="unit"
+          rules={[{ required: true, message: "Unit is required" }]}
+        >
+          <Input placeholder="個" />
+        </Form.Item>
+        <Form.Item label="Estimated price" name="estimatedPrice">
+          <Input placeholder="e.g. 120 HKD" />
+        </Form.Item>
+        <Form.Item label="Bought year" name="boughtYear">
+          <Input placeholder="e.g. 2024" />
+        </Form.Item>
+        <Form.Item label="Remarks" name="remarks">
+          <Input.TextArea
+            rows={2}
+            placeholder="Optional remarks"
+            maxLength={1000}
+            showCount
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+}
+
+export function ItemsManager({ items, locations }: ItemsManagerProps) {
+  const { message } = App.useApp();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ItemRecord | null>(null);
 
   function openCreate() {
     setEditing(null);
@@ -98,6 +229,7 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         estimatedPrice: values.estimatedPrice,
         boughtYear: values.boughtYear,
         remarks: values.remarks,
+        locationId: values.locationId ?? null,
       };
 
       const result = editing
@@ -148,13 +280,19 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         dataSource={items}
         loading={pending}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1200 }}
         columns={[
           {
             title: "Name",
             dataIndex: "name",
             fixed: "left",
             width: 160,
+          },
+          {
+            title: "Location",
+            dataIndex: "locationName",
+            width: 140,
+            render: (value: string | null) => value || "—",
           },
           {
             title: "Desc",
@@ -220,68 +358,14 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         locale={{ emptyText: "No items yet. Add your first item." }}
       />
 
-      <Modal
-        title={editing ? "Edit item" : "Add item"}
+      <ItemFormModal
         open={open}
+        editing={editing}
+        pending={pending}
+        locations={locations}
         onCancel={closeModal}
-        onOk={() => form.submit()}
-        confirmLoading={pending}
-        okText={editing ? "Save" : "Create"}
-        forceRender
-        afterClose={() => form.resetFields()}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          requiredMark={false}
-          onFinish={onSubmit}
-          initialValues={emptyFormValues}
-        >
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: "Name is required" }]}
-          >
-            <Input placeholder="USB-C 充電線" />
-          </Form.Item>
-          <Form.Item label="Desc" name="desc">
-            <Input.TextArea
-              rows={2}
-              placeholder="Optional description"
-              maxLength={1000}
-              showCount
-            />
-          </Form.Item>
-          <Form.Item
-            label="Quantity"
-            name="quantity"
-            rules={[{ required: true, message: "Quantity is required" }]}
-          >
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Unit"
-            name="unit"
-            rules={[{ required: true, message: "Unit is required" }]}
-          >
-            <Input placeholder="個" />
-          </Form.Item>
-          <Form.Item label="Estimated price" name="estimatedPrice">
-            <Input placeholder="e.g. 120 HKD" />
-          </Form.Item>
-          <Form.Item label="Bought year" name="boughtYear">
-            <Input placeholder="e.g. 2024" />
-          </Form.Item>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea
-              rows={2}
-              placeholder="Optional remarks"
-              maxLength={1000}
-              showCount
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+        onSubmit={onSubmit}
+      />
     </>
   );
 }

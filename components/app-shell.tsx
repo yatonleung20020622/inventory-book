@@ -3,6 +3,7 @@
 import {
   AppstoreOutlined,
   DashboardOutlined,
+  EnvironmentOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -30,6 +31,11 @@ const navItems = [
     key: "/dashboard",
     icon: <DashboardOutlined />,
     label: "Dashboard",
+  },
+  {
+    key: "/locations",
+    icon: <EnvironmentOutlined />,
+    label: "Locations",
   },
   {
     key: "/items",
@@ -167,8 +173,8 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
   const selectedKey = pathname.startsWith("/profile")
     ? "/profile"
     : (navItems.find(
-        (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
-      )?.key ?? "/dashboard");
+      (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
+    )?.key ?? "/dashboard");
 
   useEffect(() => {
     setMounted(true);

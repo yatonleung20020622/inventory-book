@@ -13,6 +13,8 @@ export type ItemRecord = {
   estimatedPrice: string;
   boughtYear: string;
   remarks: string;
+  locationId: string | null;
+  locationName: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,6 +33,8 @@ type ItemRow = {
   estimatedPrice: string;
   boughtYear: string;
   remarks: string;
+  locationId: string | null;
+  location: { name: string } | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -43,6 +47,26 @@ async function requireUserId() {
   return session.user.id;
 }
 
+async function resolveOwnedLocationId(
+  userId: string,
+  locationId: string | null | undefined,
+) {
+  if (!locationId) {
+    return null;
+  }
+
+  const location = await prisma.location.findFirst({
+    where: { id: locationId, userId },
+    select: { id: true },
+  });
+
+  if (!location) {
+    throw new Error("Invalid location.");
+  }
+
+  return location.id;
+}
+
 function toItemRecord(item: ItemRow): ItemRecord {
   return {
     id: item.id,
@@ -53,6 +77,8 @@ function toItemRecord(item: ItemRow): ItemRecord {
     estimatedPrice: item.estimatedPrice,
     boughtYear: item.boughtYear,
     remarks: item.remarks,
+    locationId: item.locationId,
+    locationName: item.location?.name ?? null,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
@@ -62,6 +88,11 @@ export async function listItems(): Promise<ItemRecord[]> {
   const userId = await requireUserId();
   const items = await prisma.item.findMany({
     where: { userId },
+    include: {
+      location: {
+        select: { name: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
   return items.map(toItemRecord);
@@ -75,6 +106,7 @@ export async function createItem(input: {
   estimatedPrice?: string;
   boughtYear?: string;
   remarks?: string;
+  locationId?: string | null;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -85,6 +117,7 @@ export async function createItem(input: {
     const estimatedPrice = (input.estimatedPrice ?? "").trim();
     const boughtYear = (input.boughtYear ?? "").trim();
     const remarks = (input.remarks ?? "").trim();
+    const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
     if (!name) {
       return { ok: false, message: "Name is required." };
@@ -102,13 +135,17 @@ export async function createItem(input: {
         estimatedPrice,
         boughtYear,
         remarks,
+        locationId,
         userId,
       },
     });
 
     revalidatePath("/items");
     return { ok: true, message: "Item created." };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid location.") {
+      return { ok: false, message: error.message };
+    }
     return { ok: false, message: "Failed to create item." };
   }
 }
@@ -122,6 +159,7 @@ export async function updateItem(input: {
   estimatedPrice: string;
   boughtYear: string;
   remarks: string;
+  locationId?: string | null;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -131,6 +169,7 @@ export async function updateItem(input: {
     const estimatedPrice = input.estimatedPrice.trim();
     const boughtYear = input.boughtYear.trim();
     const remarks = input.remarks.trim();
+    const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
     if (!name) {
       return { ok: false, message: "Name is required." };
@@ -149,6 +188,7 @@ export async function updateItem(input: {
         estimatedPrice,
         boughtYear,
         remarks,
+        locationId,
       },
     });
 
@@ -158,7 +198,10 @@ export async function updateItem(input: {
 
     revalidatePath("/items");
     return { ok: true, message: "Item updated." };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid location.") {
+      return { ok: false, message: error.message };
+    }
     return { ok: false, message: "Failed to update item." };
   }
 }

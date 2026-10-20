@@ -8,27 +8,49 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String     @id @default(cuid())
+  email        String     @unique
   passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   items        Item[]
+  locations    Location[]
 }
 
 model Item {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
-  desc           String   @default("") @db.Text
-  quantity       Int      @default(1)
-  unit           String   @default("個")
-  estimatedPrice String   @default("")
-  boughtYear     String   @default("")
-  remarks        String   @default("") @db.Text
+  desc           String    @default("") @db.Text
+  quantity       Int       @default(1)
+  unit           String    @default("個")
+  estimatedPrice String    @default("")
+  boughtYear     String    @default("")
+  remarks        String    @default("") @db.Text
+  locationId     String?
+  location       Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([userId])
+  @@index([locationId])
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String
+  address   String   @default("") @db.Text
+  lat       String   @default("")
+  lon       String   @default("")
+  isExpired Boolean  @default(false) @map("is_expired")
+  isDefault Boolean  @default(false) @map("is_default")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("locations")
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfigProvider, theme as antdTheme } from "antd";
+import { App, ConfigProvider, theme as antdTheme } from "antd";
 import {
   createContext,
   useContext,
@@ -89,7 +89,7 @@ export function ThemeProvider({ initialTheme, children }: ThemeProviderProps) {
           },
         }}
       >
-        {children}
+        <App>{children}</App>
       </ConfigProvider>
     </ThemeContext.Provider>
   );
