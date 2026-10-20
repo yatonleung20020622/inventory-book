@@ -17,7 +17,7 @@ import {
   message,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   createItem,
   deleteItem,
@@ -42,26 +42,32 @@ export function ItemsManager({ items }: ItemsManagerProps) {
   const [editing, setEditing] = useState<ItemRecord | null>(null);
   const [form] = Form.useForm<ItemFormValues>();
 
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      form.setFieldsValue({
+        name: editing.name,
+        quantity: editing.quantity,
+        unit: editing.unit,
+      });
+      return;
+    }
+    form.setFieldsValue({ name: "", quantity: 1, unit: "個" });
+  }, [open, editing, form]);
+
   function openCreate() {
     setEditing(null);
-    form.setFieldsValue({ name: "", quantity: 1, unit: "個" });
     setOpen(true);
   }
 
   function openEdit(item: ItemRecord) {
     setEditing(item);
-    form.setFieldsValue({
-      name: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-    });
     setOpen(true);
   }
 
   function closeModal() {
     setOpen(false);
     setEditing(null);
-    form.resetFields();
   }
 
   function onSubmit(values: ItemFormValues) {
@@ -175,7 +181,8 @@ export function ItemsManager({ items }: ItemsManagerProps) {
         onOk={() => form.submit()}
         confirmLoading={pending}
         okText={editing ? "Save" : "Create"}
-        destroyOnHidden
+        forceRender
+        afterClose={() => form.resetFields()}
       >
         <Form
           form={form}
