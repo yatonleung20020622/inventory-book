@@ -34,7 +34,12 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString();
 }
 
-async function ItemDetails({ id }: { id: string }) {
+async function ItemDetails({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const item = await getItem(id);
   if (!item) {
     notFound();
@@ -131,16 +136,14 @@ async function ItemDetails({ id }: { id: string }) {
   );
 }
 
-export default async function ItemDetailPage({
+export default function ItemDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-
   return (
     <Suspense fallback={<div>Loading item…</div>}>
-      <ItemDetails id={id} />
+      <ItemDetails params={params} />
     </Suspense>
   );
 }
