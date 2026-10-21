@@ -6,7 +6,9 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import {
+  App,
   Button,
+  DatePicker,
   Form,
   Input,
   InputNumber,
@@ -15,8 +17,8 @@ import {
   Select,
   Space,
   Table,
-  App,
 } from "antd";
+import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
@@ -50,7 +52,7 @@ type ItemFormValues = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
-  boughtYear: string;
+  purchaseDate: string;
   remarks: string;
   locationId: string | null;
 };
@@ -66,7 +68,7 @@ const emptyFormValues: ItemFormValues = {
   quantity: 1,
   unit: "個",
   estimatedPrice: "",
-  boughtYear: "",
+  purchaseDate: "",
   remarks: "",
   locationId: null,
 };
@@ -97,7 +99,7 @@ function ItemFormModal({
         quantity: editing.quantity,
         unit: editing.unit,
         estimatedPrice: editing.estimatedPrice,
-        boughtYear: editing.boughtYear,
+        purchaseDate: editing.purchaseDate,
         remarks: editing.remarks,
         locationId: editing.locationId,
       });
@@ -189,8 +191,15 @@ function ItemFormModal({
         <Form.Item label="Estimated price" name="estimatedPrice">
           <Input placeholder="e.g. 120 HKD" />
         </Form.Item>
-        <Form.Item label="Bought year" name="boughtYear">
-          <Input placeholder="e.g. 2024" />
+        <Form.Item
+          label="Purchase date"
+          name="purchaseDate"
+          getValueProps={(value: string) => ({
+            value: value ? dayjs(value) : null,
+          })}
+          normalize={(value) => (value ? value.format("YYYY-MM-DD") : "")}
+        >
+          <DatePicker style={{ width: "100%" }} allowClear />
         </Form.Item>
         <Form.Item label="Remarks" name="remarks">
           <Input.TextArea
@@ -235,7 +244,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         quantity: values.quantity,
         unit: values.unit,
         estimatedPrice: values.estimatedPrice,
-        boughtYear: values.boughtYear,
+        purchaseDate: values.purchaseDate ?? "",
         remarks: values.remarks,
         locationId: values.locationId ?? null,
       };
@@ -325,9 +334,11 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
             ellipsis: true,
           },
           {
-            title: "Bought year",
-            dataIndex: "boughtYear",
-            width: 110,
+            title: "Purchase date",
+            dataIndex: "purchaseDate",
+            width: 130,
+            render: (value: string) =>
+              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
           },
           {
             title: "Remarks",

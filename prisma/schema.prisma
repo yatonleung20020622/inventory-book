@@ -24,7 +24,7 @@ model Item {
   quantity       Int       @default(1)
   unit           String    @default("個")
   estimatedPrice String    @default("")
-  boughtYear     String    @default("")
+  purchaseDate   String    @default("")
   remarks        String    @default("") @db.Text
   locationId     String?
   location       Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)

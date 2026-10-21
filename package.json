@@ -24,6 +24,7 @@
     "@prisma/client": "^7.10.1",
     "antd": "^6.6.7",
     "bcryptjs": "^3.0.3",
+    "dayjs": "^1.11.23",
     "dotenv": "^18.0.8",
     "next": "16.4.2",
     "next-auth": "^5.0.0-beta.32",

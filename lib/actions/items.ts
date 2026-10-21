@@ -11,7 +11,7 @@ export type ItemRecord = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
-  boughtYear: string;
+  purchaseDate: string;
   remarks: string;
   locationId: string | null;
   locationName: string | null;
@@ -31,7 +31,7 @@ type ItemRow = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
-  boughtYear: string;
+  purchaseDate: string;
   remarks: string;
   locationId: string | null;
   location: { name: string } | null;
@@ -75,7 +75,7 @@ function toItemRecord(item: ItemRow): ItemRecord {
     quantity: item.quantity,
     unit: item.unit,
     estimatedPrice: item.estimatedPrice,
-    boughtYear: item.boughtYear,
+    purchaseDate: item.purchaseDate,
     remarks: item.remarks,
     locationId: item.locationId,
     locationName: item.location?.name ?? null,
@@ -104,7 +104,7 @@ export async function createItem(input: {
   quantity?: number;
   unit?: string;
   estimatedPrice?: string;
-  boughtYear?: string;
+  purchaseDate?: string;
   remarks?: string;
   locationId?: string | null;
 }): Promise<ItemActionResult> {
@@ -115,7 +115,7 @@ export async function createItem(input: {
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
     const estimatedPrice = (input.estimatedPrice ?? "").trim();
-    const boughtYear = (input.boughtYear ?? "").trim();
+    const purchaseDate = (input.purchaseDate ?? "").trim();
     const remarks = (input.remarks ?? "").trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
@@ -133,7 +133,7 @@ export async function createItem(input: {
         quantity: Math.floor(quantity),
         unit,
         estimatedPrice,
-        boughtYear,
+        purchaseDate,
         remarks,
         locationId,
         userId,
@@ -157,7 +157,7 @@ export async function updateItem(input: {
   quantity: number;
   unit: string;
   estimatedPrice: string;
-  boughtYear: string;
+  purchaseDate: string;
   remarks: string;
   locationId?: string | null;
 }): Promise<ItemActionResult> {
@@ -167,7 +167,7 @@ export async function updateItem(input: {
     const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
     const estimatedPrice = input.estimatedPrice.trim();
-    const boughtYear = input.boughtYear.trim();
+    const purchaseDate = input.purchaseDate.trim();
     const remarks = input.remarks.trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
@@ -186,7 +186,7 @@ export async function updateItem(input: {
         quantity: Math.floor(input.quantity),
         unit,
         estimatedPrice,
-        boughtYear,
+        purchaseDate,
         remarks,
         locationId,
       },
