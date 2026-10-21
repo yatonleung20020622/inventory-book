@@ -7,7 +7,6 @@ import {
   EyeOutlined,
   PlusOutlined,
   UploadOutlined,
-  UnorderedListOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 import {
@@ -39,7 +38,6 @@ import {
   type ItemRecord,
 } from "@/lib/actions/items";
 import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
-import { SubItemsModal } from "./sub-items-modal";
 
 type LocationOption = {
   id: string;
@@ -283,7 +281,6 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
-  const [subItemsItem, setSubItemsItem] = useState<ItemRecord | null>(null);
   const brandOptions = uniqueBrands(items);
 
   function openCreate() {
@@ -501,7 +498,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
           {
             title: "Actions",
             key: "actions",
-            width: 148,
+            width: 120,
             fixed: "right",
             render: (_, record) => (
               <Space size={0}>
@@ -512,12 +509,6 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
                     aria-label="View item"
                   />
                 </Link>
-                <Button
-                  type="link"
-                  icon={<UnorderedListOutlined />}
-                  onClick={() => setSubItemsItem(record)}
-                  aria-label="Manage sub-items"
-                />
                 <Button
                   type="link"
                   icon={<EditOutlined />}
@@ -552,13 +543,6 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         brandOptions={brandOptions}
         onCancel={closeModal}
         onSubmit={onSubmit}
-      />
-
-      <SubItemsModal
-        open={Boolean(subItemsItem)}
-        itemId={subItemsItem?.id ?? null}
-        itemName={subItemsItem?.name ?? ""}
-        onClose={() => setSubItemsItem(null)}
       />
     </>
   );
