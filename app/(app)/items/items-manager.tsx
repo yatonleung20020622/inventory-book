@@ -2,9 +2,11 @@
 
 import {
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
+  UploadOutlined,
   UnorderedListOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
@@ -21,7 +23,9 @@ import {
   Select,
   Space,
   Table,
+  Tag,
   Tooltip,
+  Upload,
 } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
@@ -30,9 +34,11 @@ import { useEffect, useState, useTransition } from "react";
 import {
   createItem,
   deleteItem,
+  importItemsFromCsv,
   updateItem,
   type ItemRecord,
 } from "@/lib/actions/items";
+import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
 import { SubItemsModal } from "./sub-items-modal";
 
 type LocationOption = {
@@ -337,6 +343,41 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
     });
   }
 
+  function downloadTemplate() {
+    const csv = buildItemCsvTemplate();
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "items-template.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function onImportCsv(file: File) {
+    startTransition(async () => {
+      try {
+        const text = await file.text();
+        const result = await importItemsFromCsv(text);
+        if (!result.ok) {
+          message.error(result.message);
+          if (result.errors?.length) {
+            message.warning(result.errors.join(" "));
+          }
+          return;
+        }
+        message.success(result.message);
+        if (result.errors?.length) {
+          message.warning(result.errors.join(" "));
+        }
+        router.refresh();
+      } catch {
+        message.error("Failed to read CSV file.");
+      }
+    });
+    return false;
+  }
+
   return (
     <>
       <div
@@ -345,12 +386,28 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 16,
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>Items</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Add item
-        </Button>
+        <Space wrap>
+          <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
+            Download template
+          </Button>
+          <Upload
+            accept=".csv,text/csv"
+            showUploadList={false}
+            beforeUpload={onImportCsv}
+          >
+            <Button icon={<UploadOutlined />} loading={pending}>
+              Import CSV
+            </Button>
+          </Upload>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            Add item
+          </Button>
+        </Space>
       </div>
 
       <Table<ItemRecord>
@@ -366,7 +423,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
             fixed: "left",
             width: 180,
             render: (value: string, record) => (
-              <Space size={6}>
+              <Space size={6} wrap>
                 {record.notice.trim() ? (
                   <Tooltip title={record.notice}>
                     <WarningOutlined
@@ -376,6 +433,19 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
                   </Tooltip>
                 ) : null}
                 <Link href={`/items/${record.id}`}>{value}</Link>
+                {record.onSale ? (
+                  <Tooltip
+                    title={
+                      record.salePrice?.trim()
+                        ? `Sale price: ${record.salePrice}`
+                        : "Posted for sale"
+                    }
+                  >
+                    <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                      On sale
+                    </Tag>
+                  </Tooltip>
+                ) : null}
               </Space>
             ),
           },

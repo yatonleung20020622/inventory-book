@@ -12,13 +12,16 @@ export const authConfig = {
       if (user) {
         token.sub = user.id;
         token.email = user.email;
+        token.username = user.username;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? "";
-        session.user.email = token.email ?? "";
+        session.user.email = typeof token.email === "string" ? token.email : "";
+        session.user.username =
+          typeof token.username === "string" ? token.username : "";
       }
       return session;
     },
@@ -30,6 +33,7 @@ export const authConfig = {
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/items") ||
         pathname.startsWith("/locations") ||
+        pathname.startsWith("/sales") ||
         pathname.startsWith("/profile")
       ) {
         return isLoggedIn;

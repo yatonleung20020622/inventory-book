@@ -8,6 +8,8 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  ShopOutlined,
+  TagOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Grid, Layout, Menu, Tooltip } from "antd";
@@ -23,6 +25,7 @@ const { useBreakpoint } = Grid;
 
 type AppShellProps = {
   email: string;
+  username: string;
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
@@ -34,29 +37,42 @@ const navItems = [
     label: "Dashboard",
   },
   {
-    key: "/locations",
-    icon: <EnvironmentOutlined />,
-    label: "Locations",
+    key: "/sales",
+    icon: <ShopOutlined />,
+    label: "Selling now",
+  },
+  {
+    key: "/sales/mine",
+    icon: <TagOutlined />,
+    label: "My posts",
   },
   {
     key: "/items",
     icon: <AppstoreOutlined />,
     label: "Items",
   },
+  {
+    key: "/locations",
+    icon: <EnvironmentOutlined />,
+    label: "Locations",
+  },
 ];
 
 function SideNav({
   email,
+  username,
   selectedKey,
   collapsed,
   onNavigate,
 }: {
   email: string;
+  username: string;
   selectedKey: string;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const profileActive = selectedKey === "/profile";
+  const displayName = username.trim() || "Account";
 
   return (
     <div
@@ -98,14 +114,24 @@ function SideNav({
         selectedKeys={
           selectedKey === "/profile" ? [] : selectedKey ? [selectedKey] : []
         }
-        items={navItems.map((item) => ({
-          ...item,
-          label: (
-            <Link href={item.key} onClick={onNavigate}>
-              {item.label}
-            </Link>
-          ),
-        }))}
+        items={navItems.flatMap((item) => {
+          const menuItem = {
+            ...item,
+            label: (
+              <Link href={item.key} onClick={onNavigate}>
+                {item.label}
+              </Link>
+            ),
+          };
+          // Group breaks: Dashboard | Selling now + My posts | Items + Locations
+          if (item.key === "/dashboard" || item.key === "/sales/mine") {
+            return [
+              menuItem,
+              { type: "divider" as const, key: `${item.key}-divider` },
+            ];
+          }
+          return [menuItem];
+        })}
         style={{
           borderInlineEnd: 0,
           background: "transparent",
@@ -152,7 +178,7 @@ function SideNav({
                   minWidth: 0,
                 }}
               >
-                {email}
+                {displayName}
               </Text>
             ) : null}
           </Link>
@@ -162,7 +188,12 @@ function SideNav({
   );
 }
 
-export function AppShell({ email, signOutAction, children }: AppShellProps) {
+export function AppShell({
+  email,
+  username,
+  signOutAction,
+  children,
+}: AppShellProps) {
   const pathname = usePathname();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -173,9 +204,12 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
 
   const selectedKey = pathname.startsWith("/profile")
     ? "/profile"
-    : (navItems.find(
-      (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
-    )?.key ?? "/dashboard");
+    : ([...navItems]
+      .sort((a, b) => b.key.length - a.key.length)
+      .find(
+        (item) =>
+          pathname === item.key || pathname.startsWith(`${item.key}/`),
+      )?.key ?? "/dashboard");
 
   useEffect(() => {
     setMounted(true);
@@ -206,6 +240,7 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
           <div style={{ height: "100%" }}>
             <SideNav
               email={email}
+              username={username}
               selectedKey={selectedKey}
               collapsed={collapsed}
             />
@@ -238,6 +273,7 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
       >
         <SideNav
           email={email}
+          username={username}
           selectedKey={selectedKey}
           onNavigate={() => setDrawerOpen(false)}
         />

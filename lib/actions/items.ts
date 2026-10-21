@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { parseCsv, rowsToItemCsv } from "@/lib/csv/items-csv";
 import { prisma } from "@/lib/prisma";
 
 export type ItemRecord = {
@@ -17,6 +18,8 @@ export type ItemRecord = {
   remarks: string;
   locationId: string | null;
   locationName: string | null;
+  onSale: boolean;
+  salePrice: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -39,6 +42,7 @@ type ItemRow = {
   remarks: string;
   locationId: string | null;
   location: { name: string } | null;
+  saleListings?: { id: string; salePrice: string }[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -72,6 +76,7 @@ async function resolveOwnedLocationId(
 }
 
 function toItemRecord(item: ItemRow): ItemRecord {
+  const listing = item.saleListings?.[0];
   return {
     id: item.id,
     name: item.name,
@@ -85,20 +90,28 @@ function toItemRecord(item: ItemRow): ItemRecord {
     remarks: item.remarks,
     locationId: item.locationId,
     locationName: item.location?.name ?? null,
+    onSale: Boolean(listing),
+    salePrice: listing?.salePrice ?? null,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
 }
 
+const itemInclude = {
+  location: {
+    select: { name: true },
+  },
+  saleListings: {
+    select: { id: true, salePrice: true },
+    take: 1,
+  },
+} as const;
+
 export async function listItems(): Promise<ItemRecord[]> {
   const userId = await requireUserId();
   const items = await prisma.item.findMany({
     where: { userId },
-    include: {
-      location: {
-        select: { name: true },
-      },
-    },
+    include: itemInclude,
     orderBy: { createdAt: "desc" },
   });
   return items.map(toItemRecord);
@@ -108,11 +121,7 @@ export async function getItem(id: string): Promise<ItemRecord | null> {
   const userId = await requireUserId();
   const item = await prisma.item.findFirst({
     where: { id, userId },
-    include: {
-      location: {
-        select: { name: true },
-      },
-    },
+    include: itemInclude,
   });
   return item ? toItemRecord(item) : null;
 }
@@ -252,5 +261,113 @@ export async function deleteItem(id: string): Promise<ItemActionResult> {
     return { ok: true, message: "Item deleted." };
   } catch {
     return { ok: false, message: "Failed to delete item." };
+  }
+}
+
+export type ImportItemsResult = {
+  ok: boolean;
+  message: string;
+  created?: number;
+  failed?: number;
+  errors?: string[];
+};
+
+export async function importItemsFromCsv(
+  csvText: string,
+): Promise<ImportItemsResult> {
+  try {
+    const parsed = rowsToItemCsv(parseCsv(csvText));
+    if (!parsed.ok) {
+      return { ok: false, message: parsed.message };
+    }
+
+    const userId = await requireUserId();
+    const locations = await prisma.location.findMany({
+      where: { userId },
+      select: { id: true, name: true },
+    });
+    const locationByName = new Map(
+      locations.map((location) => [location.name.trim().toLowerCase(), location.id]),
+    );
+
+    let created = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < parsed.items.length; i += 1) {
+      const row = parsed.items[i];
+      const rowNumber = i + 2; // header is row 1
+      const name = row.name.trim();
+      if (!name) {
+        errors.push(`Row ${rowNumber}: name is required.`);
+        continue;
+      }
+
+      const quantityRaw = row.quantity.trim();
+      const quantity = quantityRaw === "" ? 1 : Number(quantityRaw);
+      if (!Number.isFinite(quantity) || quantity < 0) {
+        errors.push(`Row ${rowNumber}: quantity must be zero or greater.`);
+        continue;
+      }
+
+      const locationName = row.location.trim();
+      let locationId: string | null = null;
+      if (locationName) {
+        const matched = locationByName.get(locationName.toLowerCase());
+        if (!matched) {
+          errors.push(
+            `Row ${rowNumber}: location "${locationName}" was not found.`,
+          );
+          continue;
+        }
+        locationId = matched;
+      }
+
+      try {
+        await prisma.item.create({
+          data: {
+            name,
+            brand: row.brand.trim(),
+            desc: row.desc.trim(),
+            quantity: Math.floor(quantity),
+            unit: row.unit.trim() || "個",
+            estimatedPrice: row.estimatedPrice.trim(),
+            purchaseDate: row.purchaseDate.trim(),
+            notice: row.notice.trim(),
+            remarks: row.remarks.trim(),
+            locationId,
+            userId,
+          },
+        });
+        created += 1;
+      } catch {
+        errors.push(`Row ${rowNumber}: failed to create item.`);
+      }
+    }
+
+    revalidatePath("/items");
+
+    if (created === 0) {
+      return {
+        ok: false,
+        message: "No items were imported.",
+        created: 0,
+        failed: errors.length,
+        errors: errors.slice(0, 10),
+      };
+    }
+
+    const failed = errors.length;
+    return {
+      ok: true,
+      message:
+        failed > 0
+          ? `Imported ${created} item(s); ${failed} row(s) failed.`
+          : `Imported ${created} item(s).`,
+      created,
+      failed,
+      errors: errors.slice(0, 10),
+    };
+  } catch {
+    return { ok: false, message: "Failed to import CSV." };
   }
 }

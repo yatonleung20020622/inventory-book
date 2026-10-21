@@ -1,6 +1,10 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { APP_CHANNEL, APP_VERSION, getAppVersionLabel } from "@/lib/app-version";
+import { listSharedSaleListings } from "@/lib/actions/sales";
 import { prisma } from "@/lib/prisma";
+import { ForSaleCarousel } from "./for-sale-carousel";
 
 async function DashboardStats() {
   await connection();
@@ -9,11 +13,12 @@ async function DashboardStats() {
   return (
     <div
       style={{
-        marginTop: 24,
         padding: 20,
         borderRadius: 8,
         background: "var(--page-bg)",
         border: "1px solid var(--border-color)",
+        minWidth: 200,
+        flex: "1 1 200px",
         maxWidth: 280,
       }}
     >
@@ -27,13 +32,98 @@ async function DashboardStats() {
   );
 }
 
+function BetaVersionCard() {
+  return (
+    <div
+      style={{
+        padding: 20,
+        borderRadius: 8,
+        background: "rgba(22, 119, 255, 0.08)",
+        border: "1px solid rgba(22, 119, 255, 0.35)",
+        minWidth: 240,
+        flex: "1 1 260px",
+        maxWidth: 360,
+      }}
+    >
+      <div
+        style={{
+          display: "inline-block",
+          marginBottom: 10,
+          padding: "2px 8px",
+          borderRadius: 4,
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 0.04,
+          textTransform: "uppercase",
+          color: "#1677ff",
+          background: "rgba(22, 119, 255, 0.12)",
+        }}
+      >
+        {APP_CHANNEL}
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+        Inventory Book {getAppVersionLabel()}
+      </div>
+      <p
+        style={{
+          margin: 0,
+          color: "var(--muted)",
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}
+      >
+        You are using a beta build (v{APP_VERSION}). Features may change, and
+        some workflows are still being polished. Thanks for trying it early.
+      </p>
+    </div>
+  );
+}
+
+async function ForSaleSection() {
+  const listings = await listSharedSaleListings();
+
+  return (
+    <section style={{ marginTop: 32 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>For sale</h2>
+        <Link href="/sales" style={{ fontSize: 13 }}>
+          View all
+        </Link>
+      </div>
+      <ForSaleCarousel listings={listings} />
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   return (
     <>
       <h1 style={{ marginTop: 0, fontSize: 24, fontWeight: 600 }}>Dashboard</h1>
       <p style={{ color: "var(--muted)" }}>Welcome back.</p>
-      <Suspense fallback={<div style={{ marginTop: 24 }}>Loading stats…</div>}>
-        <DashboardStats />
+      <div
+        style={{
+          marginTop: 24,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 16,
+          alignItems: "stretch",
+        }}
+      >
+        <BetaVersionCard />
+        <Suspense fallback={<div style={{ padding: 20 }}>Loading stats…</div>}>
+          <DashboardStats />
+        </Suspense>
+      </div>
+      <Suspense fallback={<div style={{ marginTop: 32 }}>Loading for sale…</div>}>
+        <ForSaleSection />
       </Suspense>
     </>
   );

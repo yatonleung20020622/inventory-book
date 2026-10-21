@@ -18,13 +18,15 @@ async function main() {
   const email = "yatonleung20020622@gmail.com";
   const passwordHash = await bcrypt.hash("seeder", 12);
 
+  const username = "Andrew Leung";
+
   await prisma.user.upsert({
     where: { email },
-    update: { passwordHash },
-    create: { email, passwordHash },
+    update: { passwordHash, username },
+    create: { email, username, passwordHash },
   });
 
-  console.log(`Seeded user: ${email}`);
+  console.log(`Seeded user: ${username} <${email}>`);
 }
 
 main()

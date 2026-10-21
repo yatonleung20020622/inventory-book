@@ -8,36 +8,55 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
+  username     String        @default("")
   passwordHash String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   items        Item[]
   locations    Location[]
+  saleListings SaleListing[]
 }
 
 model Item {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
-  brand          String    @default("")
-  desc           String    @default("") @db.Text
-  quantity       Int       @default(1)
-  unit           String    @default("個")
-  estimatedPrice String    @default("")
-  purchaseDate   String    @default("")
-  notice         String    @default("") @db.Text
-  remarks        String    @default("") @db.Text
+  brand          String        @default("")
+  desc           String        @default("") @db.Text
+  quantity       Int           @default(1)
+  unit           String        @default("個")
+  estimatedPrice String        @default("")
+  purchaseDate   String        @default("")
+  notice         String        @default("") @db.Text
+  remarks        String        @default("") @db.Text
   locationId     String?
-  location       Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  location       Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
   userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subItems       SubItem[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  saleListings   SaleListing[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([userId])
   @@index([locationId])
+}
+
+model SaleListing {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salePrice String   @default("")
+  note      String   @default("") @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@index([itemId])
 }
 
 model SubItem {
