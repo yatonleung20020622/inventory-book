@@ -15,6 +15,7 @@ import Text from "antd/es/typography/Text";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { PageAboveCardProvider } from "@/components/page-above-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const { Sider, Content, Header, Footer } = Layout;
@@ -304,17 +305,19 @@ export function AppShell({ email, signOutAction, children }: AppShellProps) {
             minHeight: 280,
           }}
         >
-          <div
-            style={{
-              background: "var(--card-bg)",
-              padding: isMobile ? 16 : 24,
-              borderRadius: 8,
-              minHeight: "100%",
-              color: "var(--foreground)",
-            }}
-          >
-            {children}
-          </div>
+          <PageAboveCardProvider>
+            <div
+              style={{
+                background: "var(--card-bg)",
+                padding: isMobile ? 16 : 24,
+                borderRadius: 8,
+                minHeight: "100%",
+                color: "var(--foreground)",
+              }}
+            >
+              {children}
+            </div>
+          </PageAboveCardProvider>
         </Content>
         <Footer
           style={{

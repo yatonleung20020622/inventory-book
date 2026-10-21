@@ -3,6 +3,7 @@
 import {
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
 import {
@@ -19,6 +20,7 @@ import {
   Table,
 } from "antd";
 import dayjs from "dayjs";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
@@ -304,6 +306,9 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
             dataIndex: "name",
             fixed: "left",
             width: 160,
+            render: (value: string, record) => (
+              <Link href={`/items/${record.id}`}>{value}</Link>
+            ),
           },
           {
             title: "Location",
@@ -349,26 +354,35 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
           {
             title: "Actions",
             key: "actions",
-            width: 160,
+            width: 120,
             fixed: "right",
             render: (_, record) => (
-              <Space>
+              <Space size={0}>
+                <Link href={`/items/${record.id}`}>
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    aria-label="View item"
+                  />
+                </Link>
                 <Button
                   type="link"
                   icon={<EditOutlined />}
                   onClick={() => openEdit(record)}
-                >
-                  Edit
-                </Button>
+                  aria-label="Edit item"
+                />
                 <Popconfirm
                   title="Delete this item?"
                   okText="Delete"
                   cancelText="Cancel"
                   onConfirm={() => onDelete(record.id)}
                 >
-                  <Button type="link" danger icon={<DeleteOutlined />}>
-                    Delete
-                  </Button>
+                  <Button
+                    type="link"
+                    danger
+                    icon={<DeleteOutlined />}
+                    aria-label="Delete item"
+                  />
                 </Popconfirm>
               </Space>
             ),

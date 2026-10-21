@@ -98,6 +98,19 @@ export async function listItems(): Promise<ItemRecord[]> {
   return items.map(toItemRecord);
 }
 
+export async function getItem(id: string): Promise<ItemRecord | null> {
+  const userId = await requireUserId();
+  const item = await prisma.item.findFirst({
+    where: { id, userId },
+    include: {
+      location: {
+        select: { name: true },
+      },
+    },
+  });
+  return item ? toItemRecord(item) : null;
+}
+
 export async function createItem(input: {
   name: string;
   desc?: string;
