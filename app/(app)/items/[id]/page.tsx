@@ -57,6 +57,36 @@ async function ItemDetails({ id }: { id: string }) {
         Item details
       </p>
 
+      {item.notice.trim() ? (
+        <div
+          role="alert"
+          style={{
+            maxWidth: 720,
+            marginBottom: 16,
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "rgba(250, 173, 20, 0.12)",
+            border: "1px solid rgba(250, 173, 20, 0.55)",
+            color: "var(--foreground)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#d48806",
+              marginBottom: 4,
+              letterSpacing: 0.02,
+            }}
+          >
+            Notice
+          </div>
+          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {item.notice}
+          </div>
+        </div>
+      ) : null}
+
       <div
         style={{
           maxWidth: 720,
@@ -67,6 +97,7 @@ async function ItemDetails({ id }: { id: string }) {
         }}
       >
         <DetailRow label="Name" value={item.name} />
+        <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
         <DetailRow
           label="Location"
           value={item.locationName || <EmptyValue />}
@@ -81,6 +112,10 @@ async function ItemDetails({ id }: { id: string }) {
         <DetailRow
           label="Purchase date"
           value={item.purchaseDate || <EmptyValue />}
+        />
+        <DetailRow
+          label="Notice"
+          value={item.notice || <EmptyValue />}
         />
         <DetailRow label="Remarks" value={item.remarks || <EmptyValue />} />
         <DetailRow

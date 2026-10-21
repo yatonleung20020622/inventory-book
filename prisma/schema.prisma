@@ -20,21 +20,38 @@ model User {
 model Item {
   id             String    @id @default(cuid())
   name           String
+  brand          String    @default("")
   desc           String    @default("") @db.Text
   quantity       Int       @default(1)
   unit           String    @default("個")
   estimatedPrice String    @default("")
   purchaseDate   String    @default("")
+  notice         String    @default("") @db.Text
   remarks        String    @default("") @db.Text
   locationId     String?
   location       Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subItems       SubItem[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([userId])
   @@index([locationId])
+}
+
+model SubItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  Int      @default(1)
+  unit      String   @default("個")
+  remarks   String   @default("") @db.Text
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
 }
 
 model Location {

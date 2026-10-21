@@ -5,9 +5,12 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
+  UnorderedListOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import {
   App,
+  AutoComplete,
   Button,
   DatePicker,
   Form,
@@ -18,6 +21,7 @@ import {
   Select,
   Space,
   Table,
+  Tooltip,
 } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
@@ -29,6 +33,7 @@ import {
   updateItem,
   type ItemRecord,
 } from "@/lib/actions/items";
+import { SubItemsModal } from "./sub-items-modal";
 
 type LocationOption = {
   id: string;
@@ -48,13 +53,28 @@ function getDefaultLocationId(locations: LocationOption[]): string | null {
   return null;
 }
 
+function uniqueBrands(items: ItemRecord[]): string[] {
+  const brands = new Set<string>();
+  for (const item of items) {
+    const brand = item.brand.trim();
+    if (brand) {
+      brands.add(brand);
+    }
+  }
+  return Array.from(brands).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+}
+
 type ItemFormValues = {
   name: string;
+  brand: string;
   desc: string;
   quantity: number;
   unit: string;
   estimatedPrice: string;
   purchaseDate: string;
+  notice: string;
   remarks: string;
   locationId: string | null;
 };
@@ -66,11 +86,13 @@ type ItemsManagerProps = {
 
 const emptyFormValues: ItemFormValues = {
   name: "",
+  brand: "",
   desc: "",
   quantity: 1,
   unit: "個",
   estimatedPrice: "",
   purchaseDate: "",
+  notice: "",
   remarks: "",
   locationId: null,
 };
@@ -80,6 +102,7 @@ function ItemFormModal({
   editing,
   pending,
   locations,
+  brandOptions,
   onCancel,
   onSubmit,
 }: {
@@ -87,31 +110,44 @@ function ItemFormModal({
   editing: ItemRecord | null;
   pending: boolean;
   locations: LocationOption[];
+  brandOptions: string[];
   onCancel: () => void;
   onSubmit: (values: ItemFormValues) => void;
 }) {
   const [form] = Form.useForm<ItemFormValues>();
+  const [brandSearch, setBrandSearch] = useState("");
 
   useEffect(() => {
     if (!open) return;
     if (editing) {
       form.setFieldsValue({
         name: editing.name,
+        brand: editing.brand,
         desc: editing.desc,
         quantity: editing.quantity,
         unit: editing.unit,
         estimatedPrice: editing.estimatedPrice,
         purchaseDate: editing.purchaseDate,
+        notice: editing.notice,
         remarks: editing.remarks,
         locationId: editing.locationId,
       });
+      setBrandSearch(editing.brand);
       return;
     }
     form.setFieldsValue({
       ...emptyFormValues,
       locationId: getDefaultLocationId(locations),
     });
+    setBrandSearch("");
   }, [open, editing, form, locations]);
+
+  const brandQuery = brandSearch.trim().toLowerCase();
+  const filteredBrandOptions = (
+    brandQuery
+      ? brandOptions.filter((brand) => brand.toLowerCase().includes(brandQuery))
+      : brandOptions
+  ).map((brand) => ({ value: brand }));
 
   if (!open) {
     return null;
@@ -168,6 +204,17 @@ function ItemFormModal({
             }))}
           />
         </Form.Item>
+        <Form.Item label="Brand" name="brand">
+          <AutoComplete
+            allowClear
+            options={filteredBrandOptions}
+            placeholder="e.g. Apple"
+            onSearch={setBrandSearch}
+            onSelect={(value) => setBrandSearch(value)}
+            onChange={(value) => setBrandSearch(value ?? "")}
+            filterOption={false}
+          />
+        </Form.Item>
         <Form.Item label="Desc" name="desc">
           <Input.TextArea
             rows={2}
@@ -203,6 +250,14 @@ function ItemFormModal({
         >
           <DatePicker style={{ width: "100%" }} allowClear />
         </Form.Item>
+        <Form.Item label="Notice" name="notice">
+          <Input.TextArea
+            rows={2}
+            placeholder="Optional notice (stands out from remarks)"
+            maxLength={1000}
+            showCount
+          />
+        </Form.Item>
         <Form.Item label="Remarks" name="remarks">
           <Input.TextArea
             rows={2}
@@ -222,6 +277,8 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
+  const [subItemsItem, setSubItemsItem] = useState<ItemRecord | null>(null);
+  const brandOptions = uniqueBrands(items);
 
   function openCreate() {
     setEditing(null);
@@ -242,11 +299,13 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
     startTransition(async () => {
       const payload = {
         name: values.name,
+        brand: values.brand ?? "",
         desc: values.desc,
         quantity: values.quantity,
         unit: values.unit,
         estimatedPrice: values.estimatedPrice,
         purchaseDate: values.purchaseDate ?? "",
+        notice: values.notice ?? "",
         remarks: values.remarks,
         locationId: values.locationId ?? null,
       };
@@ -299,16 +358,34 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         dataSource={items}
         loading={pending}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1320 }}
         columns={[
           {
             title: "Name",
             dataIndex: "name",
             fixed: "left",
-            width: 160,
+            width: 180,
             render: (value: string, record) => (
-              <Link href={`/items/${record.id}`}>{value}</Link>
+              <Space size={6}>
+                {record.notice.trim() ? (
+                  <Tooltip title={record.notice}>
+                    <WarningOutlined
+                      style={{ color: "#faad14" }}
+                      aria-label="Has notice"
+                    />
+                  </Tooltip>
+                ) : null}
+                <Link href={`/items/${record.id}`}>{value}</Link>
+              </Space>
             ),
+          },
+          {
+            title: "Brand",
+            dataIndex: "brand",
+            width: 120,
+            ellipsis: true,
+            render: (value: string) =>
+              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
           },
           {
             title: "Location",
@@ -354,7 +431,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
           {
             title: "Actions",
             key: "actions",
-            width: 120,
+            width: 148,
             fixed: "right",
             render: (_, record) => (
               <Space size={0}>
@@ -365,6 +442,12 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
                     aria-label="View item"
                   />
                 </Link>
+                <Button
+                  type="link"
+                  icon={<UnorderedListOutlined />}
+                  onClick={() => setSubItemsItem(record)}
+                  aria-label="Manage sub-items"
+                />
                 <Button
                   type="link"
                   icon={<EditOutlined />}
@@ -396,8 +479,16 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         editing={editing}
         pending={pending}
         locations={locations}
+        brandOptions={brandOptions}
         onCancel={closeModal}
         onSubmit={onSubmit}
+      />
+
+      <SubItemsModal
+        open={Boolean(subItemsItem)}
+        itemId={subItemsItem?.id ?? null}
+        itemName={subItemsItem?.name ?? ""}
+        onClose={() => setSubItemsItem(null)}
       />
     </>
   );

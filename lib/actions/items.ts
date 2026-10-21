@@ -7,11 +7,13 @@ import { prisma } from "@/lib/prisma";
 export type ItemRecord = {
   id: string;
   name: string;
+  brand: string;
   desc: string;
   quantity: number;
   unit: string;
   estimatedPrice: string;
   purchaseDate: string;
+  notice: string;
   remarks: string;
   locationId: string | null;
   locationName: string | null;
@@ -27,11 +29,13 @@ export type ItemActionResult = {
 type ItemRow = {
   id: string;
   name: string;
+  brand: string;
   desc: string;
   quantity: number;
   unit: string;
   estimatedPrice: string;
   purchaseDate: string;
+  notice: string;
   remarks: string;
   locationId: string | null;
   location: { name: string } | null;
@@ -71,11 +75,13 @@ function toItemRecord(item: ItemRow): ItemRecord {
   return {
     id: item.id,
     name: item.name,
+    brand: item.brand,
     desc: item.desc,
     quantity: item.quantity,
     unit: item.unit,
     estimatedPrice: item.estimatedPrice,
     purchaseDate: item.purchaseDate,
+    notice: item.notice,
     remarks: item.remarks,
     locationId: item.locationId,
     locationName: item.location?.name ?? null,
@@ -113,22 +119,26 @@ export async function getItem(id: string): Promise<ItemRecord | null> {
 
 export async function createItem(input: {
   name: string;
+  brand?: string;
   desc?: string;
   quantity?: number;
   unit?: string;
   estimatedPrice?: string;
   purchaseDate?: string;
+  notice?: string;
   remarks?: string;
   locationId?: string | null;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
     const name = input.name.trim();
+    const brand = (input.brand ?? "").trim();
     const desc = (input.desc ?? "").trim();
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
     const estimatedPrice = (input.estimatedPrice ?? "").trim();
     const purchaseDate = (input.purchaseDate ?? "").trim();
+    const notice = (input.notice ?? "").trim();
     const remarks = (input.remarks ?? "").trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
@@ -142,11 +152,13 @@ export async function createItem(input: {
     await prisma.item.create({
       data: {
         name,
+        brand,
         desc,
         quantity: Math.floor(quantity),
         unit,
         estimatedPrice,
         purchaseDate,
+        notice,
         remarks,
         locationId,
         userId,
@@ -166,21 +178,25 @@ export async function createItem(input: {
 export async function updateItem(input: {
   id: string;
   name: string;
+  brand: string;
   desc: string;
   quantity: number;
   unit: string;
   estimatedPrice: string;
   purchaseDate: string;
+  notice: string;
   remarks: string;
   locationId?: string | null;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
     const name = input.name.trim();
+    const brand = input.brand.trim();
     const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
     const estimatedPrice = input.estimatedPrice.trim();
     const purchaseDate = input.purchaseDate.trim();
+    const notice = input.notice.trim();
     const remarks = input.remarks.trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
 
@@ -195,11 +211,13 @@ export async function updateItem(input: {
       where: { id: input.id, userId },
       data: {
         name,
+        brand,
         desc,
         quantity: Math.floor(input.quantity),
         unit,
         estimatedPrice,
         purchaseDate,
+        notice,
         remarks,
         locationId,
       },

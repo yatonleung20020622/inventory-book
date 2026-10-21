@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Item` ADD COLUMN `brand` VARCHAR(191) NOT NULL DEFAULT '';
