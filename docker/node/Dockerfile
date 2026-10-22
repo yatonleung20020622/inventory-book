@@ -19,10 +19,11 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-# prisma generate reads prisma.config.ts; no live DB needed at build time
-ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/inventory_book"
 
-# Prisma client (custom output under lib/generated) + Next standalone build
+# Name must be DATABASE_URL — prisma.config.ts reads process.env.DATABASE_URL.
+# Placeholder is enough for `prisma generate` (no live connection). Do not pass real
+# secrets as build-args (they land in image history); runtime uses env_file instead.
+ARG DATABASE_URL=mysql://placeholder:placeholder@127.0.0.1:3306/inventory_book
 RUN npx prisma generate && npm run build
 
 FROM base AS runner
