@@ -6,6 +6,9 @@ const port = Number(process.env.DATABASE_PORT ?? 3306);
 const user = process.env.DATABASE_USER ?? "root";
 const password = process.env.DATABASE_PASSWORD ?? "";
 const database = process.env.DATABASE_NAME ?? "inventory_book";
+const sslEnabled =
+  process.env.DATABASE_SSL === "true" ||
+  process.env.DATABASE_URL?.includes("ssl-mode=REQUIRED") === true;
 
 async function main() {
   const connection = await mariadb.createConnection({
@@ -13,6 +16,7 @@ async function main() {
     port,
     user,
     password,
+    ...(sslEnabled ? { ssl: { rejectUnauthorized: true } } : {}),
   });
 
   try {

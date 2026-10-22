@@ -1,14 +1,20 @@
-version: '3'
-
 services:
   dev:
     image: node:lts-alpine
-    working_dir: /application
+    working_dir: /app
     volumes:
-      - ./:/application:delegated
-    command: /bin/sh -c "npm install && npm run dev"
+      - ./:/app:delegated
+      - inventory_book_node_modules:/app/node_modules
+    command: /bin/sh -c "npm install && npm run db:generate && npm run dev -- --hostname 0.0.0.0 --port 3000"
     ports:
       - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Reach MariaDB on the Docker host (override in .env for remote DBs)
+      DATABASE_HOST: ${DATABASE_HOST:-host.docker.internal}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - net
 
@@ -16,12 +22,17 @@ services:
     build:
       context: ./
       dockerfile: ./docker/node/Dockerfile
-    volumes:
-      - ./docker/webserver/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    env_file:
+      - .env
     environment:
       - VIRTUAL_HOST=andrew-inventory-book.innovationowl.com
       - LETSENCRYPT_HOST=andrew-inventory-book.innovationowl.com
       - ENABLE_ACME=true
+      # nginx-proxy / acme companion route to the Next.js server
+      - VIRTUAL_PORT=3000
+      - DATABASE_HOST=${DATABASE_HOST:-host.docker.internal}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       expose_network:
       net:
@@ -33,3 +44,6 @@ networks:
     external:
       name: web_proxy
   net:
+
+volumes:
+  inventory_book_node_modules:
