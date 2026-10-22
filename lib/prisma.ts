@@ -10,15 +10,20 @@ function createPrismaClient() {
     process.env.DATABASE_SSL === "true" ||
     process.env.DATABASE_URL?.includes("ssl-mode=REQUIRED") === true;
 
-  const adapter = new PrismaMariaDb({
-    host: process.env.DATABASE_HOST ?? "127.0.0.1",
-    port: Number(process.env.DATABASE_PORT ?? 3306),
-    user: process.env.DATABASE_USER ?? "root",
-    password: process.env.DATABASE_PASSWORD ?? "",
-    database: process.env.DATABASE_NAME ?? "inventory_book",
-    connectionLimit: 5,
-    ...(sslEnabled ? { ssl: { rejectUnauthorized: true } } : {}),
-  });
+  const adapter = new PrismaMariaDb(
+    {
+      host: process.env.DATABASE_HOST ?? "127.0.0.1",
+      port: Number(process.env.DATABASE_PORT ?? 3306),
+      user: process.env.DATABASE_USER ?? "root",
+      password: process.env.DATABASE_PASSWORD ?? "",
+      database: process.env.DATABASE_NAME ?? "inventory_book",
+      connectionLimit: 5,
+      connectTimeout: 30_000,
+      acquireTimeout: 30_000,
+      ...(sslEnabled ? { ssl: { rejectUnauthorized: true } } : {}),
+    },
+    { useTextProtocol: true },
+  );
 
   return new PrismaClient({ adapter });
 }

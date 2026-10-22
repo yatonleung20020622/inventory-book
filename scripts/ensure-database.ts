@@ -16,6 +16,7 @@ async function main() {
     port,
     user,
     password,
+    connectTimeout: 30_000,
     ...(sslEnabled ? { ssl: { rejectUnauthorized: true } } : {}),
   });
 
