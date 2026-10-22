@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { PageLoading } from "@/components/page-loading";
-import { getItem } from "@/lib/actions/items";
+import { listItemRelations } from "@/lib/actions/item-relations";
+import { getItem, listItems } from "@/lib/actions/items";
+import { ItemRelations } from "./item-relations";
 
 function DetailRow({
   label,
@@ -39,10 +41,22 @@ async function ItemDetails({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = await getItem(id);
+  const [item, relations, allItems] = await Promise.all([
+    getItem(id),
+    listItemRelations(id),
+    listItems(),
+  ]);
   if (!item) {
     notFound();
   }
+
+  const itemOptions = allItems
+    .filter((entry) => entry.id !== item.id)
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      brand: entry.brand,
+    }));
 
   return (
     <>
@@ -65,13 +79,14 @@ async function ItemDetails({
         <div
           role="alert"
           style={{
-            maxWidth: 720,
+            width: "100%",
             marginBottom: 16,
             padding: "12px 16px",
             borderRadius: 8,
             background: "rgba(250, 173, 20, 0.12)",
             border: "1px solid rgba(250, 173, 20, 0.55)",
             color: "var(--foreground)",
+            boxSizing: "border-box",
           }}
         >
           <div
@@ -91,44 +106,55 @@ async function ItemDetails({
         </div>
       ) : null}
 
-      <div
-        style={{
-          maxWidth: 720,
-          padding: "8px 20px",
-          borderRadius: 8,
-          background: "var(--card-bg)",
-          border: "1px solid var(--border-color)",
-        }}
-      >
-        <DetailRow label="Name" value={item.name} />
-        <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
-        <DetailRow
-          label="Location"
-          value={item.locationName || <EmptyValue />}
-        />
-        <DetailRow label="Desc" value={item.desc || <EmptyValue />} />
-        <DetailRow label="Quantity" value={item.quantity} />
-        <DetailRow label="Unit" value={item.unit} />
-        <DetailRow
-          label="Estimated price"
-          value={item.estimatedPrice || <EmptyValue />}
-        />
-        <DetailRow
-          label="Purchase date"
-          value={item.purchaseDate || <EmptyValue />}
-        />
-        <DetailRow
-          label="Notice"
-          value={item.notice || <EmptyValue />}
-        />
-        <DetailRow label="Remarks" value={item.remarks || <EmptyValue />} />
-        <DetailRow
-          label="Created"
-          value={formatDateTime(item.createdAt)}
-        />
-        <DetailRow
-          label="Updated"
-          value={formatDateTime(item.updatedAt)}
+      <div className="item-detail-layout">
+        <div
+          style={{
+            width: "100%",
+            minWidth: 0,
+            boxSizing: "border-box",
+            padding: "8px 16px",
+            borderRadius: 8,
+            background: "var(--card-bg)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <DetailRow label="Name" value={item.name} />
+          <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
+          <DetailRow
+            label="Location"
+            value={item.locationName || <EmptyValue />}
+          />
+          <DetailRow label="Desc" value={item.desc || <EmptyValue />} />
+          <DetailRow label="Quantity" value={item.quantity} />
+          <DetailRow label="Unit" value={item.unit} />
+          <DetailRow
+            label="Estimated price"
+            value={item.estimatedPrice || <EmptyValue />}
+          />
+          <DetailRow
+            label="Purchase date"
+            value={item.purchaseDate || <EmptyValue />}
+          />
+          <DetailRow
+            label="Notice"
+            value={item.notice || <EmptyValue />}
+          />
+          <DetailRow label="Remarks" value={item.remarks || <EmptyValue />} />
+          <DetailRow
+            label="Created"
+            value={formatDateTime(item.createdAt)}
+          />
+          <DetailRow
+            label="Updated"
+            value={formatDateTime(item.updatedAt)}
+          />
+        </div>
+
+        <ItemRelations
+          itemId={item.id}
+          itemName={item.name}
+          relations={relations}
+          itemOptions={itemOptions}
         />
       </div>
     </>

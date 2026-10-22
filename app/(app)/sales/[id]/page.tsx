@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { PageLoading } from "@/components/page-loading";
+import { listSaleComments } from "@/lib/actions/sale-comments";
 import { getSaleListing } from "@/lib/actions/sales";
 import { formatSalePriceDisplay } from "@/lib/sale-price";
+import { ListingComments } from "./listing-comments";
 
 function DetailRow({
   label,
@@ -52,6 +54,7 @@ async function SaleListingDetails({
     notFound();
   }
 
+  const comments = await listSaleComments(id);
   const condition = formatCondition(listing.condition);
   const price = formatSalePriceDisplay(listing.salePrice);
 
@@ -169,6 +172,8 @@ async function SaleListingDetails({
           value={formatDateTime(listing.updatedAt)}
         />
       </div>
+
+      <ListingComments listingId={listing.id} comments={comments} />
     </>
   );
 }

@@ -13,65 +13,102 @@ enum Role {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  username     String        @default("")
-  phone        String        @default("")
-  passwordHash String
-  role         Role          @default(USER)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  items        Item[]
-  locations    Location[]
-  saleListings SaleListing[]
+  id              String               @id @default(cuid())
+  email           String               @unique
+  username        String               @default("")
+  phone           String               @default("")
+  passwordHash    String
+  role            Role                 @default(USER)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  items           Item[]
+  locations       Location[]
+  saleListings    SaleListing[]
+  saleComments    SaleListingComment[]
+  itemRelations   ItemRelation[]
 }
 
 model Item {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
-  brand          String        @default("")
-  desc           String        @default("") @db.Text
-  quantity       Int           @default(1)
-  unit           String        @default("個")
-  estimatedPrice String        @default("")
-  purchaseDate   String        @default("")
-  notice         String        @default("") @db.Text
-  remarks        String        @default("") @db.Text
+  brand          String         @default("")
+  desc           String         @default("") @db.Text
+  quantity       Int            @default(1)
+  unit           String         @default("個")
+  estimatedPrice String         @default("")
+  purchaseDate   String         @default("")
+  notice         String         @default("") @db.Text
+  remarks        String         @default("") @db.Text
   locationId     String?
-  location       Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
   userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   saleListings   SaleListing[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  relationsFrom  ItemRelation[] @relation("ItemRelationsFrom")
+  relationsTo    ItemRelation[] @relation("ItemRelationsTo")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([userId])
   @@index([locationId])
 }
 
+model ItemRelation {
+  id         String   @id @default(cuid())
+  fromItemId String
+  fromItem   Item     @relation("ItemRelationsFrom", fields: [fromItemId], references: [id], onDelete: Cascade)
+  toItemId   String
+  toItem     Item     @relation("ItemRelationsTo", fields: [toItemId], references: [id], onDelete: Cascade)
+  type       String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([fromItemId, toItemId, type])
+  @@index([fromItemId])
+  @@index([toItemId])
+  @@index([userId])
+}
+
 model SaleListing {
-  id           String   @id @default(cuid())
+  id           String               @id @default(cuid())
   itemId       String
-  item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item         Item                 @relation(fields: [itemId], references: [id], onDelete: Cascade)
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String   @default("")
-  brand        String   @default("")
-  quantity     Int      @default(1)
-  unit         String   @default("個")
-  desc         String   @default("") @db.Text
-  notice       String   @default("") @db.Text
-  purchaseDate String   @default("")
-  condition    String   @default("")
-  isVirtual    Boolean  @default(false)
-  salePrice    String   @default("")
-  note         String   @default("") @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String               @default("")
+  brand        String               @default("")
+  quantity     Int                  @default(1)
+  unit         String               @default("個")
+  desc         String               @default("") @db.Text
+  notice       String               @default("") @db.Text
+  purchaseDate String               @default("")
+  condition    String               @default("")
+  isVirtual    Boolean              @default(false)
+  salePrice    String               @default("")
+  note         String               @default("") @db.Text
+  comments     SaleListingComment[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@unique([userId, itemId])
   @@index([userId])
   @@index([itemId])
+}
+
+model SaleListingComment {
+  id        String      @id @default(cuid())
+  listingId String
+  listing   SaleListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String      @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([listingId])
+  @@index([userId])
 }
 
 model Location {

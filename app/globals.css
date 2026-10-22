@@ -161,10 +161,23 @@ body {
   gap: 6px;
 }
 
+.item-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  align-items: start;
+}
+
 @media (min-width: 768px) {
   .detail-row {
-    grid-template-columns: 160px 1fr;
-    gap: 16px;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+  }
+
+  .item-detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
   }
 }
 
