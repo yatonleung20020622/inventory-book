@@ -5,6 +5,11 @@ import { auth } from "@/auth";
 import { parseCsv, rowsToItemCsv } from "@/lib/csv/items-csv";
 import { prisma } from "@/lib/prisma";
 
+export type ItemCategorySummary = {
+  id: string;
+  name: string;
+};
+
 export type ItemRecord = {
   id: string;
   name: string;
@@ -19,6 +24,7 @@ export type ItemRecord = {
   remarks: string;
   locationId: string | null;
   locationName: string | null;
+  categories: ItemCategorySummary[];
   onSale: boolean;
   salePrice: string | null;
   createdAt: string;
@@ -44,6 +50,7 @@ type ItemRow = {
   remarks: string;
   locationId: string | null;
   location: { name: string } | null;
+  categories?: { category: { id: string; name: string } }[];
   saleListings?: { id: string; salePrice: string }[];
   createdAt: Date;
   updatedAt: Date;
@@ -77,6 +84,30 @@ async function resolveOwnedLocationId(
   return location.id;
 }
 
+async function resolveOwnedCategoryIds(
+  userId: string,
+  categoryIds: string[] | undefined,
+) {
+  const uniqueIds = Array.from(
+    new Set((categoryIds ?? []).map((id) => id.trim()).filter(Boolean)),
+  );
+
+  if (uniqueIds.length === 0) {
+    return [] as string[];
+  }
+
+  const categories = await prisma.category.findMany({
+    where: { userId, id: { in: uniqueIds } },
+    select: { id: true },
+  });
+
+  if (categories.length !== uniqueIds.length) {
+    throw new Error("Invalid category.");
+  }
+
+  return categories.map((category) => category.id);
+}
+
 function toItemRecord(item: ItemRow): ItemRecord {
   const listing = item.saleListings?.[0];
   return {
@@ -93,6 +124,10 @@ function toItemRecord(item: ItemRow): ItemRecord {
     remarks: item.remarks,
     locationId: item.locationId,
     locationName: item.location?.name ?? null,
+    categories: (item.categories ?? []).map((row) => ({
+      id: row.category.id,
+      name: row.category.name,
+    })),
     onSale: Boolean(listing),
     salePrice: listing?.salePrice ?? null,
     createdAt: item.createdAt.toISOString(),
@@ -103,6 +138,16 @@ function toItemRecord(item: ItemRow): ItemRecord {
 const itemInclude = {
   location: {
     select: { name: true },
+  },
+  categories: {
+    select: {
+      category: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: {
+      category: { name: "asc" as const },
+    },
   },
   saleListings: {
     select: { id: true, salePrice: true },
@@ -141,6 +186,7 @@ export async function createItem(input: {
   notice?: string;
   remarks?: string;
   locationId?: string | null;
+  categoryIds?: string[];
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -155,6 +201,7 @@ export async function createItem(input: {
     const notice = (input.notice ?? "").trim();
     const remarks = (input.remarks ?? "").trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
+    const categoryIds = await resolveOwnedCategoryIds(userId, input.categoryIds);
 
     if (!name) {
       return { ok: false, message: "Item name is required." };
@@ -177,13 +224,21 @@ export async function createItem(input: {
         remarks,
         locationId,
         userId,
+        categories: {
+          create: categoryIds.map((categoryId) => ({ categoryId })),
+        },
       },
     });
 
     revalidatePath("/items");
+    revalidatePath("/categories");
     return { ok: true, message: "Item created." };
   } catch (error) {
-    if (error instanceof Error && error.message === "Invalid location.") {
+    if (
+      error instanceof Error &&
+      (error.message === "Invalid location." ||
+        error.message === "Invalid category.")
+    ) {
       return { ok: false, message: error.message };
     }
     return { ok: false, message: "Failed to create item." };
@@ -203,6 +258,7 @@ export async function updateItem(input: {
   notice: string;
   remarks: string;
   locationId?: string | null;
+  categoryIds?: string[];
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -216,6 +272,7 @@ export async function updateItem(input: {
     const notice = input.notice.trim();
     const remarks = input.remarks.trim();
     const locationId = await resolveOwnedLocationId(userId, input.locationId);
+    const categoryIds = await resolveOwnedCategoryIds(userId, input.categoryIds);
 
     if (!name) {
       return { ok: false, message: "Item name is required." };
@@ -224,31 +281,51 @@ export async function updateItem(input: {
       return { ok: false, message: "Quantity must be zero or greater." };
     }
 
-    const result = await prisma.item.updateMany({
+    const existing = await prisma.item.findFirst({
       where: { id: input.id, userId },
-      data: {
-        name,
-        brand,
-        majorColor,
-        desc,
-        quantity: Math.floor(input.quantity),
-        unit,
-        estimatedPrice,
-        purchaseDate,
-        notice,
-        remarks,
-        locationId,
-      },
+      select: { id: true },
     });
 
-    if (result.count === 0) {
+    if (!existing) {
       return { ok: false, message: "Item not found." };
     }
 
+    await prisma.$transaction([
+      prisma.item.update({
+        where: { id: input.id },
+        data: {
+          name,
+          brand,
+          majorColor,
+          desc,
+          quantity: Math.floor(input.quantity),
+          unit,
+          estimatedPrice,
+          purchaseDate,
+          notice,
+          remarks,
+          locationId,
+        },
+      }),
+      prisma.itemCategory.deleteMany({ where: { itemId: input.id } }),
+      prisma.itemCategory.createMany({
+        data: categoryIds.map((categoryId) => ({
+          itemId: input.id,
+          categoryId,
+        })),
+      }),
+    ]);
+
     revalidatePath("/items");
+    revalidatePath(`/items/${input.id}`);
+    revalidatePath("/categories");
     return { ok: true, message: "Item updated." };
   } catch (error) {
-    if (error instanceof Error && error.message === "Invalid location.") {
+    if (
+      error instanceof Error &&
+      (error.message === "Invalid location." ||
+        error.message === "Invalid category.")
+    ) {
       return { ok: false, message: error.message };
     }
     return { ok: false, message: "Failed to update item." };

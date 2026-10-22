@@ -1,6 +1,8 @@
+import { Tag } from "antd";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { PageLoading } from "@/components/page-loading";
 import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
@@ -122,29 +124,27 @@ async function ItemDetails({
           <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
           <DetailRow
             label="Major color"
-            value={
-              item.majorColor ? (
-                <span
-                  title={item.majorColor}
-                  aria-label={`Major color ${item.majorColor}`}
-                  style={{
-                    display: "inline-block",
-                    width: 20,
-                    height: 20,
-                    borderRadius: 4,
-                    background: item.majorColor,
-                    border: "1px solid var(--border-color)",
-                    verticalAlign: "middle",
-                  }}
-                />
-              ) : (
-                <EmptyValue />
-              )
-            }
+            value={<MajorColorSwatch value={item.majorColor} size={20} />}
           />
           <DetailRow
             label="Location"
             value={item.locationName || <EmptyValue />}
+          />
+          <DetailRow
+            label="Categories"
+            value={
+              item.categories.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {item.categories.map((category) => (
+                    <Tag key={category.id} style={{ marginInlineEnd: 0 }}>
+                      {category.name}
+                    </Tag>
+                  ))}
+                </div>
+              ) : (
+                <EmptyValue />
+              )
+            }
           />
           <DetailRow label="Desc" value={item.desc || <EmptyValue />} />
           <DetailRow label="Quantity" value={item.quantity} />

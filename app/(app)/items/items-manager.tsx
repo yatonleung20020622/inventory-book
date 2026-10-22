@@ -32,6 +32,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { TableFrame } from "@/components/table-frame";
 import {
   createItem,
@@ -48,6 +49,11 @@ type LocationOption = {
   name: string;
   isExpired: boolean;
   isDefault: boolean;
+};
+
+type CategoryOption = {
+  id: string;
+  name: string;
 };
 
 function getDefaultLocationId(locations: LocationOption[]): string | null {
@@ -86,11 +92,13 @@ type ItemFormValues = {
   notice: string;
   remarks: string;
   locationId: string | null;
+  categoryIds: string[];
 };
 
 type ItemsManagerProps = {
   items: ItemRecord[];
   locations: LocationOption[];
+  categories: CategoryOption[];
 };
 
 const emptyFormValues: ItemFormValues = {
@@ -105,37 +113,11 @@ const emptyFormValues: ItemFormValues = {
   notice: "",
   remarks: "",
   locationId: null,
+  categoryIds: [],
 };
 
 function isHexColor(value: string) {
   return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
-}
-
-function MajorColorSwatch({
-  value,
-  size = 16,
-}: {
-  value: string;
-  size?: number;
-}) {
-  if (!value) {
-    return <span style={{ opacity: 0.45 }}>-</span>;
-  }
-  return (
-    <span
-      title={value}
-      aria-label={`Major color ${value}`}
-      style={{
-        display: "inline-block",
-        width: size,
-        height: size,
-        borderRadius: 4,
-        background: value,
-        border: "1px solid var(--border-color)",
-        verticalAlign: "middle",
-      }}
-    />
-  );
 }
 
 function MajorColorPicker({
@@ -175,6 +157,7 @@ function ItemFormModal({
   editing,
   pending,
   locations,
+  categories,
   brandOptions,
   onCancel,
   onSubmit,
@@ -183,6 +166,7 @@ function ItemFormModal({
   editing: ItemRecord | null;
   pending: boolean;
   locations: LocationOption[];
+  categories: CategoryOption[];
   brandOptions: string[];
   onCancel: () => void;
   onSubmit: (values: ItemFormValues) => void;
@@ -205,6 +189,7 @@ function ItemFormModal({
         notice: editing.notice,
         remarks: editing.remarks,
         locationId: editing.locationId,
+        categoryIds: editing.categories.map((category) => category.id),
       });
       setBrandSearch(editing.brand);
       return;
@@ -212,6 +197,7 @@ function ItemFormModal({
     form.setFieldsValue({
       ...emptyFormValues,
       locationId: getDefaultLocationId(locations),
+      categoryIds: [],
     });
     setBrandSearch("");
   }, [open, editing, form, locations]);
@@ -276,6 +262,18 @@ function ItemFormModal({
                 ? `${location.name} (expired)`
                 : location.name,
             }))}
+          />
+        </Form.Item>
+        <Form.Item label="Categories" name="categoryIds">
+          <Select
+            mode="multiple"
+            allowClear
+            placeholder="Select categories"
+            options={categories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
+            optionFilterProp="label"
           />
         </Form.Item>
         <Form.Item label="Brand" name="brand">
@@ -348,7 +346,11 @@ function ItemFormModal({
   );
 }
 
-export function ItemsManager({ items, locations }: ItemsManagerProps) {
+export function ItemsManager({
+  items,
+  locations,
+  categories,
+}: ItemsManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -385,6 +387,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         notice: values.notice ?? "",
         remarks: values.remarks,
         locationId: values.locationId ?? null,
+        categoryIds: values.categoryIds ?? [],
       };
 
       const result = editing
@@ -487,7 +490,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         dataSource={items}
         loading={pending}
         pagination={{ pageSize: 10, simple: true }}
-        scroll={{ x: 1220 }}
+        scroll={{ x: 1360 }}
         columns={[
           {
             title: "Name",
@@ -543,6 +546,23 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
             dataIndex: "locationName",
             width: 140,
             render: (value: string | null) => value || "—",
+          },
+          {
+            title: "Categories",
+            dataIndex: "categories",
+            width: 180,
+            render: (value: ItemRecord["categories"]) =>
+              value.length > 0 ? (
+                <Space size={[4, 4]} wrap>
+                  {value.map((category) => (
+                    <Tag key={category.id} style={{ marginInlineEnd: 0 }}>
+                      {category.name}
+                    </Tag>
+                  ))}
+                </Space>
+              ) : (
+                <span style={{ opacity: 0.45 }}>-</span>
+              ),
           },
           {
             title: "Desc",
@@ -625,6 +645,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         editing={editing}
         pending={pending}
         locations={locations}
+        categories={categories}
         brandOptions={brandOptions}
         onCancel={closeModal}
         onSubmit={onSubmit}

@@ -9,6 +9,7 @@ import {
   MenuOutlined,
   MenuUnfoldOutlined,
   ShopOutlined,
+  TagsOutlined,
   TagOutlined,
   TeamOutlined,
   UserOutlined,
@@ -57,6 +58,11 @@ const baseNavItems = [
     key: "/locations",
     icon: <EnvironmentOutlined />,
     label: "Locations",
+  },
+  {
+    key: "/categories",
+    icon: <TagsOutlined />,
+    label: "Categories",
   },
 ];
 
@@ -135,11 +141,11 @@ function SideNav({
               </Link>
             ),
           };
-          // Group breaks: Dashboard | Selling | Items + Locations | Users (admin)
+          // Group breaks: Dashboard | Selling | Items + Locations + Categories | Users (admin)
           if (
             item.key === "/dashboard" ||
             item.key === "/sales/mine" ||
-            (item.key === "/locations" && role === "ADMIN")
+            (item.key === "/categories" && role === "ADMIN")
           ) {
             return [
               menuItem,

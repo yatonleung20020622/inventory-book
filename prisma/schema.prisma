@@ -23,6 +23,7 @@ model User {
   updatedAt       DateTime             @updatedAt
   items           Item[]
   locations       Location[]
+  categories      Category[]
   saleListings    SaleListing[]
   saleComments    SaleListingComment[]
   itemRelations   ItemRelation[]
@@ -47,11 +48,35 @@ model Item {
   saleListings   SaleListing[]
   relationsFrom  ItemRelation[] @relation("ItemRelationsFrom")
   relationsTo    ItemRelation[] @relation("ItemRelationsTo")
+  categories     ItemCategory[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
   @@index([userId])
   @@index([locationId])
+}
+
+model Category {
+  id        String         @id @default(cuid())
+  name      String
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ItemCategory[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model ItemCategory {
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, categoryId])
+  @@index([categoryId])
 }
 
 model ItemRelation {
