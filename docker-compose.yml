@@ -41,8 +41,8 @@ services:
 networks:
   # Join proxy network for exposing http services
   expose_network:
-    external:
-      name: web_proxy
+    name: web_proxy
+    external: true
   net:
 
 volumes:
