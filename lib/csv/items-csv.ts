@@ -1,6 +1,7 @@
 export const ITEM_CSV_HEADERS = [
   "name",
   "brand",
+  "majorColor",
   "desc",
   "quantity",
   "unit",
@@ -18,6 +19,7 @@ export type ItemCsvRow = Record<ItemCsvHeader, string>;
 const SAMPLE_ROW: ItemCsvRow = {
   name: "USB-C 充電線",
   brand: "Apple",
+  majorColor: "Black",
   desc: "Optional description",
   quantity: "1",
   unit: "個",

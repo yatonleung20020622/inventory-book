@@ -121,6 +121,28 @@ async function ItemDetails({
           <DetailRow label="Name" value={item.name} />
           <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
           <DetailRow
+            label="Major color"
+            value={
+              item.majorColor ? (
+                <span
+                  title={item.majorColor}
+                  aria-label={`Major color ${item.majorColor}`}
+                  style={{
+                    display: "inline-block",
+                    width: 20,
+                    height: 20,
+                    borderRadius: 4,
+                    background: item.majorColor,
+                    border: "1px solid var(--border-color)",
+                    verticalAlign: "middle",
+                  }}
+                />
+              ) : (
+                <EmptyValue />
+              )
+            }
+          />
+          <DetailRow
             label="Location"
             value={item.locationName || <EmptyValue />}
           />

@@ -13,6 +13,7 @@ import {
   App,
   AutoComplete,
   Button,
+  ColorPicker,
   DatePicker,
   Form,
   Input,
@@ -26,6 +27,7 @@ import {
   Tooltip,
   Upload,
 } from "antd";
+import type { Color } from "antd/es/color-picker";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -75,6 +77,7 @@ function uniqueBrands(items: ItemRecord[]): string[] {
 type ItemFormValues = {
   name: string;
   brand: string;
+  majorColor: string;
   desc: string;
   quantity: number;
   unit: string;
@@ -93,6 +96,7 @@ type ItemsManagerProps = {
 const emptyFormValues: ItemFormValues = {
   name: "",
   brand: "",
+  majorColor: "",
   desc: "",
   quantity: 1,
   unit: "個",
@@ -102,6 +106,69 @@ const emptyFormValues: ItemFormValues = {
   remarks: "",
   locationId: null,
 };
+
+function isHexColor(value: string) {
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
+}
+
+function MajorColorSwatch({
+  value,
+  size = 16,
+}: {
+  value: string;
+  size?: number;
+}) {
+  if (!value) {
+    return <span style={{ opacity: 0.45 }}>-</span>;
+  }
+  return (
+    <span
+      title={value}
+      aria-label={`Major color ${value}`}
+      style={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        borderRadius: 4,
+        background: value,
+        border: "1px solid var(--border-color)",
+        verticalAlign: "middle",
+      }}
+    />
+  );
+}
+
+function MajorColorPicker({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (value: string) => void;
+}) {
+  const trimmed = (value ?? "").trim();
+  const hasColor = Boolean(trimmed) && isHexColor(trimmed);
+
+  function handleChange(color: Color) {
+    onChange?.(color.toHexString());
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <ColorPicker
+        value={hasColor ? trimmed : undefined}
+        onChange={handleChange}
+        allowClear
+        onClear={() => onChange?.("")}
+        showText={false}
+        size="large"
+        aria-label="Pick major color"
+      />
+      <span style={{ color: "var(--muted)", fontSize: 13 }}>
+        {hasColor ? "Tap swatch to change" : "No color"}
+      </span>
+    </div>
+  );
+}
 
 function ItemFormModal({
   open,
@@ -129,6 +196,7 @@ function ItemFormModal({
       form.setFieldsValue({
         name: editing.name,
         brand: editing.brand,
+        majorColor: editing.majorColor,
         desc: editing.desc,
         quantity: editing.quantity,
         unit: editing.unit,
@@ -221,6 +289,9 @@ function ItemFormModal({
             filterOption={false}
           />
         </Form.Item>
+        <Form.Item label="Major color" name="majorColor">
+          <MajorColorPicker />
+        </Form.Item>
         <Form.Item label="Desc" name="desc">
           <Input.TextArea
             rows={2}
@@ -305,6 +376,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
       const payload = {
         name: values.name,
         brand: values.brand ?? "",
+        majorColor: values.majorColor ?? "",
         desc: values.desc,
         quantity: values.quantity,
         unit: values.unit,
@@ -415,7 +487,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         dataSource={items}
         loading={pending}
         pagination={{ pageSize: 10, simple: true }}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1220 }}
         columns={[
           {
             title: "Name",
@@ -458,6 +530,13 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
             ellipsis: true,
             render: (value: string) =>
               value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+          },
+          {
+            title: "Color",
+            dataIndex: "majorColor",
+            width: 72,
+            align: "center",
+            render: (value: string) => <MajorColorSwatch value={value} />,
           },
           {
             title: "Location",

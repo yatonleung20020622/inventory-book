@@ -9,6 +9,7 @@ export type ItemRecord = {
   id: string;
   name: string;
   brand: string;
+  majorColor: string;
   desc: string;
   quantity: number;
   unit: string;
@@ -33,6 +34,7 @@ type ItemRow = {
   id: string;
   name: string;
   brand: string;
+  majorColor: string;
   desc: string;
   quantity: number;
   unit: string;
@@ -81,6 +83,7 @@ function toItemRecord(item: ItemRow): ItemRecord {
     id: item.id,
     name: item.name,
     brand: item.brand,
+    majorColor: item.majorColor,
     desc: item.desc,
     quantity: item.quantity,
     unit: item.unit,
@@ -129,6 +132,7 @@ export async function getItem(id: string): Promise<ItemRecord | null> {
 export async function createItem(input: {
   name: string;
   brand?: string;
+  majorColor?: string;
   desc?: string;
   quantity?: number;
   unit?: string;
@@ -142,6 +146,7 @@ export async function createItem(input: {
     const userId = await requireUserId();
     const name = input.name.trim();
     const brand = (input.brand ?? "").trim();
+    const majorColor = (input.majorColor ?? "").trim();
     const desc = (input.desc ?? "").trim();
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
@@ -162,6 +167,7 @@ export async function createItem(input: {
       data: {
         name,
         brand,
+        majorColor,
         desc,
         quantity: Math.floor(quantity),
         unit,
@@ -188,6 +194,7 @@ export async function updateItem(input: {
   id: string;
   name: string;
   brand: string;
+  majorColor: string;
   desc: string;
   quantity: number;
   unit: string;
@@ -201,6 +208,7 @@ export async function updateItem(input: {
     const userId = await requireUserId();
     const name = input.name.trim();
     const brand = input.brand.trim();
+    const majorColor = input.majorColor.trim();
     const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
     const estimatedPrice = input.estimatedPrice.trim();
@@ -221,6 +229,7 @@ export async function updateItem(input: {
       data: {
         name,
         brand,
+        majorColor,
         desc,
         quantity: Math.floor(input.quantity),
         unit,
@@ -327,6 +336,7 @@ export async function importItemsFromCsv(
           data: {
             name,
             brand: row.brand.trim(),
+            majorColor: row.majorColor.trim(),
             desc: row.desc.trim(),
             quantity: Math.floor(quantity),
             unit: row.unit.trim() || "個",

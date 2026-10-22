@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Item` ADD COLUMN `majorColor` VARCHAR(191) NOT NULL DEFAULT '';
