@@ -46,7 +46,7 @@ async function ProfileAccount() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { email: true, username: true },
+    select: { email: true, username: true, phone: true, role: true },
   });
 
   if (!user) {
@@ -64,6 +64,11 @@ async function ProfileAccount() {
     >
       <ReadOnlyField label="Username" value={user.username || "—"} />
       <ReadOnlyField label="Email" value={user.email} />
+      <ReadOnlyField label="Phone" value={user.phone || "—"} />
+      <ReadOnlyField
+        label="Role"
+        value={user.role === "ADMIN" ? "Admin" : "User"}
+      />
     </div>
   );
 }
@@ -73,7 +78,8 @@ export default function ProfilePage() {
     <>
       <h1 style={{ marginTop: 0, fontSize: 24, fontWeight: 600 }}>Profile</h1>
       <p style={{ color: "var(--muted)", marginBottom: 24 }}>
-        Manage your account. Username cannot be changed here.
+        Manage your account. Username, email, phone, and role cannot be changed
+        here.
       </p>
       <Suspense fallback={<div style={{ marginBottom: 32 }}>Loading account…</div>}>
         <ProfileAccount />

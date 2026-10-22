@@ -16,17 +16,19 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const email = "yatonleung20020622@gmail.com";
-  const passwordHash = await bcrypt.hash("seeder", 12);
+  const passwordHash = await bcrypt.hash("password", 12);
 
   const username = "Andrew Leung";
+  const phone = "66913032";
+  const role = "ADMIN" as const;
 
   await prisma.user.upsert({
     where: { email },
-    update: { passwordHash, username },
-    create: { email, username, passwordHash },
+    update: { passwordHash, username, phone, role },
+    create: { email, username, phone, passwordHash, role },
   });
 
-  console.log(`Seeded user: ${username} <${email}>`);
+  console.log(`Seeded user: ${username} <${email}> phone=${phone} role=${role}`);
 }
 
 main()

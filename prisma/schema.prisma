@@ -7,11 +7,18 @@ datasource db {
   provider = "mysql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
   username     String        @default("")
+  phone        String        @default("")
   passwordHash String
+  role         Role          @default(USER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   items        Item[]
@@ -43,15 +50,24 @@ model Item {
 }
 
 model SaleListing {
-  id        String   @id @default(cuid())
-  itemId    String
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  salePrice String   @default("")
-  note      String   @default("") @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  itemId       String
+  item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String   @default("")
+  brand        String   @default("")
+  quantity     Int      @default(1)
+  unit         String   @default("個")
+  desc         String   @default("") @db.Text
+  notice       String   @default("") @db.Text
+  purchaseDate String   @default("")
+  condition    String   @default("")
+  isVirtual    Boolean  @default(false)
+  salePrice    String   @default("")
+  note         String   @default("") @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, itemId])
   @@index([userId])

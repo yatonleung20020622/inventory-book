@@ -1,7 +1,9 @@
 "use client";
 
 import { Table } from "antd";
+import Link from "next/link";
 import type { SaleListingRecord } from "@/lib/actions/sales";
+import { formatSalePriceDisplay } from "@/lib/sale-price";
 
 function formatDate(iso: string) {
   // Stable SSR/client format (avoid toLocaleDateString hydration mismatch).
@@ -18,33 +20,27 @@ export function SellingNowTable({
       rowKey="id"
       dataSource={listings}
       pagination={{ pageSize: 10 }}
-      scroll={{ x: 900 }}
       columns={[
         {
           title: "Item",
-          dataIndex: "itemName",
+          dataIndex: "name",
           ellipsis: true,
-        },
-        {
-          title: "Brand",
-          dataIndex: "itemBrand",
-          width: 140,
-          render: (value: string) =>
-            value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+          render: (value: string, record) => (
+            <Link href={`/sales/${record.id}`}>{value}</Link>
+          ),
         },
         {
           title: "Sale price",
           dataIndex: "salePrice",
           width: 140,
-          render: (value: string) =>
-            value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-        },
-        {
-          title: "Note",
-          dataIndex: "note",
-          ellipsis: true,
-          render: (value: string) =>
-            value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+          render: (value: string) => {
+            const display = formatSalePriceDisplay(value);
+            return display ? (
+              display
+            ) : (
+              <span style={{ opacity: 0.45 }}>-</span>
+            );
+          },
         },
         {
           title: "Seller",

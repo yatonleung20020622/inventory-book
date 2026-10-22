@@ -14,7 +14,7 @@ async function AuthenticatedShell({ children }: { children: ReactNode }) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { email: true, username: true },
+    select: { email: true, username: true, role: true },
   });
 
   if (!user) {
@@ -30,6 +30,7 @@ async function AuthenticatedShell({ children }: { children: ReactNode }) {
     <AppShell
       email={user.email}
       username={user.username}
+      role={user.role}
       signOutAction={signOutAction}
     >
       {children}

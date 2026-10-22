@@ -38,6 +38,7 @@ import {
   type ItemRecord,
 } from "@/lib/actions/items";
 import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
+import { isFreeSalePrice } from "@/lib/sale-price";
 
 type LocationOption = {
   id: string;
@@ -433,9 +434,11 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
                 {record.onSale ? (
                   <Tooltip
                     title={
-                      record.salePrice?.trim()
-                        ? `Sale price: ${record.salePrice}`
-                        : "Posted for sale"
+                      isFreeSalePrice(record.salePrice)
+                        ? "Sale price: Free"
+                        : record.salePrice?.trim()
+                          ? `Sale price: ${record.salePrice}`
+                          : "Posted for sale"
                     }
                   >
                     <Tag color="blue" style={{ marginInlineEnd: 0 }}>

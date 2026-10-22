@@ -3,6 +3,7 @@
 import { Carousel } from "antd";
 import Link from "next/link";
 import type { SaleListingRecord } from "@/lib/actions/sales";
+import { formatSalePriceDisplay } from "@/lib/sale-price";
 
 export function ForSaleCarousel({
   listings,
@@ -31,7 +32,7 @@ export function ForSaleCarousel({
       {listings.map((listing) => (
         <div key={listing.id}>
           <Link
-            href={listing.isOwn ? `/items/${listing.itemId}` : "/sales"}
+            href={`/sales/${listing.id}`}
             style={{ textDecoration: "none", color: "inherit" }}
           >
             <div
@@ -52,7 +53,7 @@ export function ForSaleCarousel({
                 }}
               >
                 {listing.sellerUsername}
-                {listing.itemBrand ? ` · ${listing.itemBrand}` : ""}
+                {listing.brand ? ` · ${listing.brand}` : ""}
               </div>
               <div
                 style={{
@@ -61,10 +62,11 @@ export function ForSaleCarousel({
                   marginBottom: 8,
                 }}
               >
-                {listing.itemName}
+                {listing.name}
               </div>
               <div style={{ fontSize: 16, color: "#1677ff" }}>
-                {listing.salePrice.trim() || "Price on request"}
+                {formatSalePriceDisplay(listing.salePrice) ||
+                  "Price on request"}
               </div>
               {listing.note.trim() ? (
                 <div

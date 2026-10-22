@@ -10,6 +10,7 @@ import {
   MenuUnfoldOutlined,
   ShopOutlined,
   TagOutlined,
+  TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Grid, Layout, Menu, Tooltip } from "antd";
@@ -26,11 +27,12 @@ const { useBreakpoint } = Grid;
 type AppShellProps = {
   email: string;
   username: string;
+  role: "USER" | "ADMIN";
   signOutAction: () => Promise<void>;
   children: ReactNode;
 };
 
-const navItems = [
+const baseNavItems = [
   {
     key: "/dashboard",
     icon: <DashboardOutlined />,
@@ -58,21 +60,31 @@ const navItems = [
   },
 ];
 
+const adminNavItem = {
+  key: "/admin/users",
+  icon: <TeamOutlined />,
+  label: "Users",
+};
+
 function SideNav({
   email,
   username,
+  role,
   selectedKey,
   collapsed,
   onNavigate,
 }: {
   email: string;
   username: string;
+  role: "USER" | "ADMIN";
   selectedKey: string;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const profileActive = selectedKey === "/profile";
   const displayName = username.trim() || "Account";
+  const navItems =
+    role === "ADMIN" ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <div
@@ -123,8 +135,12 @@ function SideNav({
               </Link>
             ),
           };
-          // Group breaks: Dashboard | Selling now + My posts | Items + Locations
-          if (item.key === "/dashboard" || item.key === "/sales/mine") {
+          // Group breaks: Dashboard | Selling | Items + Locations | Users (admin)
+          if (
+            item.key === "/dashboard" ||
+            item.key === "/sales/mine" ||
+            (item.key === "/locations" && role === "ADMIN")
+          ) {
             return [
               menuItem,
               { type: "divider" as const, key: `${item.key}-divider` },
@@ -191,6 +207,7 @@ function SideNav({
 export function AppShell({
   email,
   username,
+  role,
   signOutAction,
   children,
 }: AppShellProps) {
@@ -201,6 +218,8 @@ export function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isMobile = mounted ? !screens.lg : false;
+  const navItems =
+    role === "ADMIN" ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   const selectedKey = pathname.startsWith("/profile")
     ? "/profile"
@@ -241,6 +260,7 @@ export function AppShell({
             <SideNav
               email={email}
               username={username}
+              role={role}
               selectedKey={selectedKey}
               collapsed={collapsed}
             />
@@ -274,6 +294,7 @@ export function AppShell({
         <SideNav
           email={email}
           username={username}
+          role={role}
           selectedKey={selectedKey}
           onNavigate={() => setDrawerOpen(false)}
         />

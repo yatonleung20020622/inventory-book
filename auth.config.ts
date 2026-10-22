@@ -13,6 +13,7 @@ export const authConfig = {
         token.sub = user.id;
         token.email = user.email;
         token.username = user.username;
+        token.role = user.role;
       }
       return token;
     },
@@ -22,6 +23,10 @@ export const authConfig = {
         session.user.email = typeof token.email === "string" ? token.email : "";
         session.user.username =
           typeof token.username === "string" ? token.username : "";
+        session.user.role =
+          token.role === "ADMIN" || token.role === "USER"
+            ? token.role
+            : "USER";
       }
       return session;
     },
@@ -34,7 +39,8 @@ export const authConfig = {
         pathname.startsWith("/items") ||
         pathname.startsWith("/locations") ||
         pathname.startsWith("/sales") ||
-        pathname.startsWith("/profile")
+        pathname.startsWith("/profile") ||
+        pathname.startsWith("/admin")
       ) {
         return isLoggedIn;
       }

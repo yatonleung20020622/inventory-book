@@ -8,6 +8,8 @@ import {
 import {
   App,
   Button,
+  Checkbox,
+  DatePicker,
   Form,
   Input,
   InputNumber,
@@ -16,8 +18,10 @@ import {
   Radio,
   Select,
   Space,
+  Switch,
   Table,
 } from "antd";
+import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -27,8 +31,13 @@ import {
   createSaleListingWithNewItem,
   deleteSaleListing,
   updateSaleListing,
+  type SaleCondition,
   type SaleListingRecord,
 } from "@/lib/actions/sales";
+import {
+  formatSalePriceDisplay,
+  isFreeSalePrice,
+} from "@/lib/sale-price";
 
 type ItemSource = "existing" | "new";
 
@@ -39,7 +48,13 @@ type ListingFormValues = {
   brand?: string;
   quantity?: number;
   unit?: string;
+  desc?: string;
+  notice?: string;
+  purchaseDate?: string;
+  condition?: SaleCondition;
+  isVirtual?: boolean;
   salePrice: string;
+  isFree: boolean;
   note: string;
 };
 
@@ -47,6 +62,19 @@ type MyListingsManagerProps = {
   listings: SaleListingRecord[];
   items: ItemRecord[];
 };
+
+const CONDITION_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "like-new", label: "Like new" },
+  { value: "used", label: "Used" },
+];
+
+function formatCondition(value: string) {
+  if (value === "new") return "New";
+  if (value === "like-new") return "Like new";
+  if (value === "used") return "Used";
+  return "";
+}
 
 export function MyListingsManager({
   listings,
@@ -59,6 +87,7 @@ export function MyListingsManager({
   const [editing, setEditing] = useState<SaleListingRecord | null>(null);
   const [form] = Form.useForm<ListingFormValues>();
   const source = Form.useWatch("source", form) ?? "new";
+  const isFree = Form.useWatch("isFree", form) ?? false;
 
   const listedItemIds = new Set(listings.map((listing) => listing.itemId));
   const availableItems = items.filter(
@@ -68,10 +97,21 @@ export function MyListingsManager({
   useEffect(() => {
     if (!open) return;
     if (editing) {
+      const free = isFreeSalePrice(editing.salePrice);
       form.setFieldsValue({
         source: "existing",
         itemId: editing.itemId,
-        salePrice: editing.salePrice,
+        name: editing.name,
+        brand: editing.brand,
+        quantity: editing.quantity,
+        unit: editing.unit,
+        desc: editing.desc,
+        notice: editing.notice,
+        purchaseDate: editing.purchaseDate,
+        condition: editing.condition || undefined,
+        isVirtual: editing.isVirtual,
+        salePrice: free ? "" : editing.salePrice,
+        isFree: free,
         note: editing.note,
       });
       return;
@@ -83,7 +123,13 @@ export function MyListingsManager({
       brand: "",
       quantity: 1,
       unit: "個",
+      desc: "",
+      notice: "",
+      purchaseDate: "",
+      condition: undefined,
+      isVirtual: false,
       salePrice: "",
+      isFree: false,
       note: "",
     });
   }, [open, editing, form]);
@@ -103,24 +149,49 @@ export function MyListingsManager({
     setEditing(null);
   }
 
+  function applyItemDefaults(itemId: string) {
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) return;
+    form.setFieldsValue({
+      name: item.name,
+      brand: item.brand,
+      quantity: item.quantity,
+      unit: item.unit,
+      desc: item.desc,
+      notice: item.notice,
+      purchaseDate: item.purchaseDate,
+      salePrice: item.estimatedPrice,
+    });
+  }
+
   function onSubmit(values: ListingFormValues) {
+    const salePrice = values.isFree ? "0" : (values.salePrice ?? "");
+    const shared = {
+      name: values.name,
+      brand: values.brand,
+      quantity: values.quantity,
+      unit: values.unit,
+      desc: values.desc,
+      notice: values.notice,
+      purchaseDate: values.purchaseDate,
+      condition: values.condition ?? "",
+      isVirtual: values.isVirtual ?? false,
+      salePrice,
+      note: values.note ?? "",
+    };
+
     startTransition(async () => {
       let result;
 
       if (editing) {
         result = await updateSaleListing({
           id: editing.id,
-          salePrice: values.salePrice ?? "",
-          note: values.note ?? "",
+          ...shared,
         });
       } else if (values.source === "new") {
         result = await createSaleListingWithNewItem({
+          ...shared,
           name: values.name ?? "",
-          brand: values.brand,
-          quantity: values.quantity,
-          unit: values.unit,
-          salePrice: values.salePrice,
-          note: values.note,
         });
       } else {
         if (!values.itemId) {
@@ -129,8 +200,7 @@ export function MyListingsManager({
         }
         result = await createSaleListing({
           itemId: values.itemId,
-          salePrice: values.salePrice,
-          note: values.note,
+          ...shared,
         });
       }
 
@@ -157,6 +227,9 @@ export function MyListingsManager({
     });
   }
 
+  const showItemFields =
+    Boolean(editing) || source === "new" || source === "existing";
+
   return (
     <>
       <div
@@ -176,28 +249,66 @@ export function MyListingsManager({
         dataSource={listings}
         loading={pending}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: 1100 }}
         columns={[
           {
             title: "Item",
-            dataIndex: "itemName",
+            dataIndex: "name",
             render: (value: string, record) => (
-              <Link href={`/items/${record.itemId}`}>{value}</Link>
+              <Link href={`/sales/${record.id}`}>{value}</Link>
             ),
           },
           {
             title: "Brand",
-            dataIndex: "itemBrand",
-            width: 140,
+            dataIndex: "brand",
+            width: 120,
             render: (value: string) =>
               value ? value : <span style={{ opacity: 0.45 }}>-</span>,
           },
           {
-            title: "Sale price",
-            dataIndex: "salePrice",
-            width: 140,
+            title: "Qty",
+            key: "qty",
+            width: 90,
+            render: (_, record) => `${record.quantity} ${record.unit}`,
+          },
+          {
+            title: "Condition",
+            dataIndex: "condition",
+            width: 100,
+            render: (value: string) => {
+              const label = formatCondition(value);
+              return label ? (
+                label
+              ) : (
+                <span style={{ opacity: 0.45 }}>-</span>
+              );
+            },
+          },
+          {
+            title: "Purchase date",
+            dataIndex: "purchaseDate",
+            width: 120,
             render: (value: string) =>
               value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+          },
+          {
+            title: "Type",
+            dataIndex: "isVirtual",
+            width: 100,
+            render: (value: boolean) => (value ? "Virtual" : "Physical"),
+          },
+          {
+            title: "Sale price",
+            dataIndex: "salePrice",
+            width: 120,
+            render: (value: string) => {
+              const display = formatSalePriceDisplay(value);
+              return display ? (
+                display
+              ) : (
+                <span style={{ opacity: 0.45 }}>-</span>
+              );
+            },
           },
           {
             title: "Note",
@@ -263,6 +374,8 @@ export function MyListingsManager({
             quantity: 1,
             unit: "個",
             salePrice: "",
+            isFree: false,
+            isVirtual: false,
             note: "",
           }}
         >
@@ -297,11 +410,12 @@ export function MyListingsManager({
                     ? `${item.name} (${item.brand})`
                     : item.name,
                 }))}
+                onChange={(itemId: string) => applyItemDefaults(itemId)}
               />
             </Form.Item>
           ) : null}
 
-          {!editing && source === "new" ? (
+          {showItemFields ? (
             <>
               <Form.Item
                 label="Name"
@@ -310,7 +424,7 @@ export function MyListingsManager({
                 rules={[
                   {
                     validator: (_, value: string) =>
-                      value?.trim()
+                      value?.trim() || source === "existing"
                         ? Promise.resolve()
                         : Promise.reject(new Error("Item name is required")),
                   },
@@ -324,22 +438,78 @@ export function MyListingsManager({
               <Form.Item
                 label="Quantity"
                 name="quantity"
-                rules={[{ required: true, message: "Quantity is required" }]}
+                rules={
+                  source === "new" || editing
+                    ? [{ required: true, message: "Quantity is required" }]
+                    : undefined
+                }
               >
                 <InputNumber min={0} style={{ width: "100%" }} />
               </Form.Item>
               <Form.Item
                 label="Unit"
                 name="unit"
-                rules={[{ required: true, message: "Unit is required" }]}
+                rules={
+                  source === "new" || editing
+                    ? [{ required: true, message: "Unit is required" }]
+                    : undefined
+                }
               >
                 <Input placeholder="個" />
+              </Form.Item>
+              <Form.Item label="Description" name="desc">
+                <Input.TextArea rows={2} placeholder="Optional description" />
+              </Form.Item>
+              <Form.Item label="Notice" name="notice">
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Optional warning or notice"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Purchase date"
+                name="purchaseDate"
+                getValueProps={(value: string) => ({
+                  value: value ? dayjs(value) : null,
+                })}
+                normalize={(value) => (value ? value.format("YYYY-MM-DD") : "")}
+              >
+                <DatePicker style={{ width: "100%" }} allowClear />
+              </Form.Item>
+              <Form.Item label="Condition" name="condition">
+                <Select
+                  allowClear
+                  placeholder="Select condition"
+                  options={CONDITION_OPTIONS}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Virtual item"
+                name="isVirtual"
+                valuePropName="checked"
+              >
+                <Switch />
               </Form.Item>
             </>
           ) : null}
 
           <Form.Item label="Sale price" name="salePrice">
-            <Input placeholder="e.g. 120 HKD" />
+            <Input placeholder="e.g. 120 HKD" disabled={isFree} />
+          </Form.Item>
+          <Form.Item
+            name="isFree"
+            valuePropName="checked"
+            style={{ marginTop: -8 }}
+          >
+            <Checkbox
+              onChange={(event) => {
+                if (event.target.checked) {
+                  form.setFieldValue("salePrice", "");
+                }
+              }}
+            >
+              Free
+            </Checkbox>
           </Form.Item>
           <Form.Item label="Note" name="note">
             <Input.TextArea

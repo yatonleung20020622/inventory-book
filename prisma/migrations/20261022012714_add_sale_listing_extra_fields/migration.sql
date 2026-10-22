@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `SaleListing` ADD COLUMN `condition` VARCHAR(191) NOT NULL DEFAULT '',
+    ADD COLUMN `desc` TEXT NOT NULL DEFAULT '',
+    ADD COLUMN `isVirtual` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `notice` TEXT NOT NULL DEFAULT '',
+    ADD COLUMN `purchaseDate` VARCHAR(191) NOT NULL DEFAULT '';
