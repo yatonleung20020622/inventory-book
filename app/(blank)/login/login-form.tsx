@@ -32,7 +32,7 @@ export function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      setError("Invalid email, username, or password.");
       return;
     }
 
@@ -64,14 +64,20 @@ export function LoginForm() {
         initialValues={{ email: "", password: "" }}
       >
         <Form.Item
-          label="Email"
+          label="Email or username"
           name="email"
           rules={[
-            { required: true, message: "Email is required" },
-            { type: "email", message: "Enter a valid email" },
+            {
+              required: true,
+              message: "Email or username is required",
+            },
           ]}
         >
-          <Input autoComplete="email" size="large" />
+          <Input
+            autoComplete="username"
+            size="large"
+            placeholder="Email or username"
+          />
         </Form.Item>
 
         <Form.Item
