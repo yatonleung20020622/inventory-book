@@ -21,6 +21,7 @@ import {
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { TableFrame } from "@/components/table-frame";
 import {
   createLocation,
   deleteLocation,
@@ -223,6 +224,8 @@ export function LocationsManager({ locations }: LocationsManagerProps) {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 16,
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>Locations</h1>
@@ -231,12 +234,13 @@ export function LocationsManager({ locations }: LocationsManagerProps) {
         </Button>
       </div>
 
+      <TableFrame>
       <Table<LocationRecord>
         rowKey="id"
         dataSource={locations}
         loading={pending}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 900 }}
+        pagination={{ pageSize: 10, simple: true }}
+        scroll={{ x: 720 }}
         columns={[
           {
             title: "Name",
@@ -316,6 +320,7 @@ export function LocationsManager({ locations }: LocationsManagerProps) {
         ]}
         locale={{ emptyText: "No locations yet. Add your first location." }}
       />
+      </TableFrame>
 
       <LocationFormModal
         open={open}

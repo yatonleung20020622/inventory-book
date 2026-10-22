@@ -19,6 +19,7 @@ import {
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { TableFrame } from "@/components/table-frame";
 import {
   createUser,
   deleteUser,
@@ -143,12 +144,13 @@ export function UsersManager({ users, currentUserId }: UsersManagerProps) {
         </Button>
       </div>
 
+      <TableFrame>
       <Table<AdminUserRecord>
         rowKey="id"
         dataSource={users}
         loading={pending}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 900 }}
+        pagination={{ pageSize: 10, simple: true }}
+        scroll={{ x: 720 }}
         columns={[
           {
             title: "Username",
@@ -221,6 +223,7 @@ export function UsersManager({ users, currentUserId }: UsersManagerProps) {
         ]}
         locale={{ emptyText: "No users yet." }}
       />
+      </TableFrame>
 
       <Modal
         title={editing ? "Edit user" : "Add user"}
@@ -230,6 +233,7 @@ export function UsersManager({ users, currentUserId }: UsersManagerProps) {
         confirmLoading={pending}
         okText={editing ? "Save" : "Create"}
         destroyOnHidden
+        width="min(520px, calc(100vw - 24px))"
       >
         <Form
           form={form}

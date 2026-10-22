@@ -357,18 +357,23 @@ export function AppShell({
         </Header>
         <Content
           style={{
-            padding: isMobile ? 16 : 24,
+            padding: isMobile ? 12 : 24,
             background: "var(--page-bg)",
             minHeight: 280,
+            minWidth: 0,
+            overflowX: "hidden",
           }}
         >
           <PageAboveCardProvider>
             <div
               style={{
                 background: "var(--card-bg)",
-                padding: isMobile ? 16 : 24,
+                padding: isMobile ? 14 : 24,
                 borderRadius: 8,
                 minHeight: "100%",
+                minWidth: 0,
+                maxWidth: "100%",
+                overflowX: "hidden",
                 color: "var(--foreground)",
               }}
             >

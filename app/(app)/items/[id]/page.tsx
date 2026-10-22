@@ -13,10 +13,8 @@ function DetailRow({
 }) {
   return (
     <div
+      className="detail-row"
       style={{
-        display: "grid",
-        gridTemplateColumns: "160px 1fr",
-        gap: 16,
         padding: "12px 0",
         borderBottom: "1px solid var(--border-color)",
       }}

@@ -30,6 +30,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { TableFrame } from "@/components/table-frame";
 import {
   createItem,
   deleteItem,
@@ -408,12 +409,13 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         </Space>
       </div>
 
+      <TableFrame>
       <Table<ItemRecord>
         rowKey="id"
         dataSource={items}
         loading={pending}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1320 }}
+        pagination={{ pageSize: 10, simple: true }}
+        scroll={{ x: 1100 }}
         columns={[
           {
             title: "Name",
@@ -537,6 +539,7 @@ export function ItemsManager({ items, locations }: ItemsManagerProps) {
         ]}
         locale={{ emptyText: "No items yet. Add your first item." }}
       />
+      </TableFrame>
 
       <ItemFormModal
         open={open}

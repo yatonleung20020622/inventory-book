@@ -14,10 +14,8 @@ function DetailRow({
 }) {
   return (
     <div
+      className="detail-row"
       style={{
-        display: "grid",
-        gridTemplateColumns: "160px 1fr",
-        gap: 16,
         padding: "12px 0",
         borderBottom: "1px solid var(--border-color)",
       }}
@@ -107,7 +105,9 @@ async function SaleListingDetails({
       <div
         style={{
           maxWidth: 720,
-          padding: "8px 20px",
+          width: "100%",
+          boxSizing: "border-box",
+          padding: "8px 16px",
           borderRadius: 8,
           background: "var(--card-bg)",
           border: "1px solid var(--border-color)",

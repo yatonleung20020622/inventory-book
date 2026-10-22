@@ -11,6 +11,7 @@ import {
   Checkbox,
   DatePicker,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -25,6 +26,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { TableFrame } from "@/components/table-frame";
 import type { ItemRecord } from "@/lib/actions/items";
 import {
   createSaleListing,
@@ -38,6 +40,8 @@ import {
   formatSalePriceDisplay,
   isFreeSalePrice,
 } from "@/lib/sale-price";
+
+const { useBreakpoint } = Grid;
 
 type ItemSource = "existing" | "new";
 
@@ -82,6 +86,8 @@ export function MyListingsManager({
 }: MyListingsManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SaleListingRecord | null>(null);
@@ -239,115 +245,190 @@ export function MyListingsManager({
           marginBottom: 16,
         }}
       >
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} block={isMobile}>
           Add post
         </Button>
       </div>
 
-      <Table<SaleListingRecord>
-        rowKey="id"
-        dataSource={listings}
-        loading={pending}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1100 }}
-        columns={[
-          {
-            title: "Item",
-            dataIndex: "name",
-            render: (value: string, record) => (
-              <Link href={`/sales/${record.id}`}>{value}</Link>
-            ),
-          },
-          {
-            title: "Brand",
-            dataIndex: "brand",
-            width: 120,
-            render: (value: string) =>
-              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-          },
-          {
-            title: "Qty",
-            key: "qty",
-            width: 90,
-            render: (_, record) => `${record.quantity} ${record.unit}`,
-          },
-          {
-            title: "Condition",
-            dataIndex: "condition",
-            width: 100,
-            render: (value: string) => {
-              const label = formatCondition(value);
-              return label ? (
-                label
-              ) : (
-                <span style={{ opacity: 0.45 }}>-</span>
-              );
-            },
-          },
-          {
-            title: "Purchase date",
-            dataIndex: "purchaseDate",
-            width: 120,
-            render: (value: string) =>
-              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-          },
-          {
-            title: "Type",
-            dataIndex: "isVirtual",
-            width: 100,
-            render: (value: boolean) => (value ? "Virtual" : "Physical"),
-          },
-          {
-            title: "Sale price",
-            dataIndex: "salePrice",
-            width: 120,
-            render: (value: string) => {
-              const display = formatSalePriceDisplay(value);
-              return display ? (
-                display
-              ) : (
-                <span style={{ opacity: 0.45 }}>-</span>
-              );
-            },
-          },
-          {
-            title: "Note",
-            dataIndex: "note",
-            ellipsis: true,
-            render: (value: string) =>
-              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-          },
-          {
-            title: "Actions",
-            key: "actions",
-            width: 96,
-            render: (_, record) => (
-              <Space size={0}>
-                <Button
-                  type="link"
-                  icon={<EditOutlined />}
-                  onClick={() => openEdit(record)}
-                  aria-label="Edit post"
-                />
-                <Popconfirm
-                  title="Remove this post?"
-                  okText="Remove"
-                  cancelText="Cancel"
-                  onConfirm={() => onDelete(record.id)}
+      {isMobile ? (
+        listings.length === 0 ? (
+          <div
+            style={{
+              padding: "28px 12px",
+              textAlign: "center",
+              color: "var(--muted)",
+            }}
+          >
+            You have not posted any items for sale yet.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {listings.map((record) => {
+              const price = formatSalePriceDisplay(record.salePrice);
+              const condition = formatCondition(record.condition);
+              return (
+                <div
+                  key={record.id}
+                  style={{
+                    padding: 14,
+                    borderRadius: 10,
+                    border: "1px solid var(--border-color)",
+                    background: "var(--page-bg)",
+                  }}
                 >
-                  <Button
-                    type="link"
-                    danger
-                    icon={<DeleteOutlined />}
-                    aria-label="Remove post"
-                  />
-                </Popconfirm>
-              </Space>
-            ),
-          },
-        ]}
-        locale={{ emptyText: "You have not posted any items for sale yet." }}
-      />
+                  <Link
+                    href={`/sales/${record.id}`}
+                    style={{
+                      display: "block",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: "inherit",
+                      marginBottom: 8,
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {record.name}
+                  </Link>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "6px 12px",
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <span style={{ color: "#1677ff", fontWeight: 600 }}>
+                      {price || "—"}
+                    </span>
+                    <span>
+                      {record.quantity} {record.unit}
+                    </span>
+                    {condition ? <span>{condition}</span> : null}
+                    <span>{record.isVirtual ? "Virtual" : "Physical"}</span>
+                  </div>
+                  <Space size={4}>
+                    <Button
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => openEdit(record)}
+                    >
+                      Edit
+                    </Button>
+                    <Popconfirm
+                      title="Remove this post?"
+                      okText="Remove"
+                      cancelText="Cancel"
+                      onConfirm={() => onDelete(record.id)}
+                    >
+                      <Button size="small" danger icon={<DeleteOutlined />}>
+                        Remove
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        <TableFrame>
+          <Table<SaleListingRecord>
+            rowKey="id"
+            dataSource={listings}
+            loading={pending}
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: 900 }}
+            columns={[
+              {
+                title: "Item",
+                dataIndex: "name",
+                ellipsis: true,
+                render: (value: string, record) => (
+                  <Link href={`/sales/${record.id}`}>{value}</Link>
+                ),
+              },
+              {
+                title: "Brand",
+                dataIndex: "brand",
+                width: 110,
+                render: (value: string) =>
+                  value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+              },
+              {
+                title: "Qty",
+                key: "qty",
+                width: 90,
+                render: (_, record) => `${record.quantity} ${record.unit}`,
+              },
+              {
+                title: "Condition",
+                dataIndex: "condition",
+                width: 100,
+                render: (value: string) => {
+                  const label = formatCondition(value);
+                  return label ? (
+                    label
+                  ) : (
+                    <span style={{ opacity: 0.45 }}>-</span>
+                  );
+                },
+              },
+              {
+                title: "Type",
+                dataIndex: "isVirtual",
+                width: 90,
+                render: (value: boolean) => (value ? "Virtual" : "Physical"),
+              },
+              {
+                title: "Sale price",
+                dataIndex: "salePrice",
+                width: 110,
+                render: (value: string) => {
+                  const display = formatSalePriceDisplay(value);
+                  return display ? (
+                    display
+                  ) : (
+                    <span style={{ opacity: 0.45 }}>-</span>
+                  );
+                },
+              },
+              {
+                title: "Actions",
+                key: "actions",
+                width: 96,
+                render: (_, record) => (
+                  <Space size={0}>
+                    <Button
+                      type="link"
+                      icon={<EditOutlined />}
+                      onClick={() => openEdit(record)}
+                      aria-label="Edit post"
+                    />
+                    <Popconfirm
+                      title="Remove this post?"
+                      okText="Remove"
+                      cancelText="Cancel"
+                      onConfirm={() => onDelete(record.id)}
+                    >
+                      <Button
+                        type="link"
+                        danger
+                        icon={<DeleteOutlined />}
+                        aria-label="Remove post"
+                      />
+                    </Popconfirm>
+                  </Space>
+                ),
+              },
+            ]}
+            locale={{
+              emptyText: "You have not posted any items for sale yet.",
+            }}
+          />
+        </TableFrame>
+      )}
 
       <Modal
         title={editing ? "Edit post" : "Add post"}
@@ -357,6 +438,7 @@ export function MyListingsManager({
         confirmLoading={pending}
         okText={editing ? "Save" : "Post for sale"}
         destroyOnHidden
+        width="min(520px, calc(100vw - 24px))"
         styles={{
           body: {
             maxHeight: "min(60vh, 480px)",

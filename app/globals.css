@@ -130,6 +130,53 @@ body {
   height: 100%;
 }
 
+/* Keep tables inside the content card on phones. */
+.ant-layout-content,
+.ant-layout-content > * {
+  min-width: 0;
+}
+
+.table-frame {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.table-frame .ant-table-wrapper {
+  max-width: 100%;
+}
+
+.table-frame .ant-table {
+  min-width: 0;
+}
+
+.table-frame .ant-pagination {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .detail-row {
+    grid-template-columns: 160px 1fr;
+    gap: 16px;
+  }
+}
+
+/* Ant modals fit narrow phones */
+.ant-modal {
+  max-width: calc(100vw - 24px);
+}
+
+.ant-modal .ant-modal-content {
+  max-width: 100%;
+}
+
 /* Shared page / Suspense loading animation */
 .page-loading-mark {
   position: relative;
