@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { PageLoading } from "@/components/page-loading";
 import { getItem } from "@/lib/actions/items";
 
 function DetailRow({
@@ -142,7 +143,7 @@ export default function ItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<div>Loading item…</div>}>
+    <Suspense fallback={<PageLoading label="Loading item" variant="block" />}>
       <ItemDetails params={params} />
     </Suspense>
   );

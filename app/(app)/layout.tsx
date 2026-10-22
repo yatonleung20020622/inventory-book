@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { auth, signOut } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { PageLoading } from "@/components/page-loading";
 import { prisma } from "@/lib/prisma";
 
 async function AuthenticatedShell({ children }: { children: ReactNode }) {
@@ -40,7 +41,7 @@ async function AuthenticatedShell({ children }: { children: ReactNode }) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+    <Suspense fallback={<PageLoading label="Loading workspace" />}>
       <AuthenticatedShell>{children}</AuthenticatedShell>
     </Suspense>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoading } from "@/components/page-loading";
 import { listItems } from "@/lib/actions/items";
 import { listMySaleListings } from "@/lib/actions/sales";
 import { MyListingsManager } from "./my-listings-manager";
@@ -21,7 +22,7 @@ export default function MyListingsPage() {
       <p style={{ color: "var(--muted)", marginBottom: 24 }}>
         Choose items from your inventory to post for sale.
       </p>
-      <Suspense fallback={<div>Loading your posts…</div>}>
+      <Suspense fallback={<PageLoading label="Loading your posts" variant="block" />}>
         <MyListingsContent />
       </Suspense>
     </>

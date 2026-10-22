@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
+import { PageLoading } from "@/components/page-loading";
 
 async function HomeRedirect() {
   const session = await auth();
@@ -9,7 +10,7 @@ async function HomeRedirect() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+    <Suspense fallback={<PageLoading label="Loading" />}>
       <HomeRedirect />
     </Suspense>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoading } from "@/components/page-loading";
 import { listItems } from "@/lib/actions/items";
 import { listLocations } from "@/lib/actions/locations";
 import { ItemsManager } from "./items-manager";
@@ -21,7 +22,7 @@ async function ItemsContent() {
 
 export default function ItemsPage() {
   return (
-    <Suspense fallback={<div>Loading items…</div>}>
+    <Suspense fallback={<PageLoading label="Loading items" variant="block" />}>
       <ItemsContent />
     </Suspense>
   );

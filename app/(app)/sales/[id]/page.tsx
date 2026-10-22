@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { PageLoading } from "@/components/page-loading";
 import { getSaleListing } from "@/lib/actions/sales";
 import { formatSalePriceDisplay } from "@/lib/sale-price";
 
@@ -178,7 +179,9 @@ export default function SaleListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<div>Loading listing…</div>}>
+    <Suspense
+      fallback={<PageLoading label="Loading listing" variant="block" />}
+    >
       <SaleListingDetails params={params} />
     </Suspense>
   );

@@ -129,3 +129,114 @@ body {
 .ant-layout-sider-children {
   height: 100%;
 }
+
+/* Shared page / Suspense loading animation */
+.page-loading-mark {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+}
+
+.page-loading-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-top-color: #1677ff;
+  border-right-color: color-mix(in srgb, #1677ff 45%, transparent);
+  animation: page-loading-spin 0.85s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.page-loading-core {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--foreground);
+  animation: page-loading-pulse 1.4s ease-in-out infinite;
+}
+
+.page-loading-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.page-loading-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 2px;
+}
+
+.page-loading-dots span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: page-loading-dot 1.2s ease-in-out infinite;
+}
+
+.page-loading-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.page-loading-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes page-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes page-loading-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loading-ring,
+  .page-loading-core,
+  .page-loading-dots span {
+    animation: none;
+  }
+
+  .page-loading-ring {
+    border-top-color: #1677ff;
+    opacity: 0.85;
+  }
+
+  .page-loading-core {
+    opacity: 0.85;
+  }
+
+  .page-loading-dots span {
+    opacity: 0.55;
+  }
+}

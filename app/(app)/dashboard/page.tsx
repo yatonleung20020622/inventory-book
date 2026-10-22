@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/page-loading";
 import { APP_CHANNEL, APP_VERSION, getAppVersionLabel } from "@/lib/app-version";
 import { listSharedSaleListings } from "@/lib/actions/sales";
 import { prisma } from "@/lib/prisma";
@@ -83,7 +84,7 @@ async function ForSaleSection() {
   const listings = await listSharedSaleListings();
 
   return (
-    <section style={{ marginTop: 32 }}>
+    <section>
       <div
         style={{
           display: "flex",
@@ -118,13 +119,19 @@ export default function DashboardPage() {
         }}
       >
         <BetaVersionCard />
-        <Suspense fallback={<div style={{ padding: 20 }}>Loading stats…</div>}>
+        <Suspense
+          fallback={<PageLoading label="Loading stats" variant="inline" />}
+        >
           <DashboardStats />
         </Suspense>
       </div>
-      <Suspense fallback={<div style={{ marginTop: 32 }}>Loading for sale…</div>}>
-        <ForSaleSection />
-      </Suspense>
+      <div style={{ marginTop: 32 }}>
+        <Suspense
+          fallback={<PageLoading label="Loading for sale" variant="block" />}
+        >
+          <ForSaleSection />
+        </Suspense>
+      </div>
     </>
   );
 }

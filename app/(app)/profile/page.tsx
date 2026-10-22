@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
+import { PageLoading } from "@/components/page-loading";
 import { prisma } from "@/lib/prisma";
 import { ResetPasswordForm } from "./reset-password-form";
 
@@ -81,7 +82,9 @@ export default function ProfilePage() {
         Manage your account. Username, email, phone, and role cannot be changed
         here.
       </p>
-      <Suspense fallback={<div style={{ marginBottom: 32 }}>Loading account…</div>}>
+      <Suspense
+        fallback={<PageLoading label="Loading account" variant="block" />}
+      >
         <ProfileAccount />
       </Suspense>
       <h2 style={{ marginTop: 0, fontSize: 18, fontWeight: 600 }}>
