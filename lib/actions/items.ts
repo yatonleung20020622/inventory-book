@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { BOX_CONTAINS_TYPE, BOX_IN_TYPE } from "@/lib/box-relation";
 import { parseCsv, rowsToItemCsv } from "@/lib/csv/items-csv";
+import { parseBoxItemsExcel } from "@/lib/excel/box-items-excel";
 import { prisma } from "@/lib/prisma";
 
 export type ItemCategorySummary = {
@@ -40,6 +41,14 @@ export type ItemActionResult = {
   ok: boolean;
   message: string;
   itemId?: string;
+};
+
+export type ImportItemsResult = {
+  ok: boolean;
+  message: string;
+  created?: number;
+  failed?: number;
+  errors?: string[];
 };
 
 type ItemRow = {
@@ -350,6 +359,125 @@ export async function createItemInBox(input: {
   }
 }
 
+/** Bulk-create items inside a box from an Excel (.xlsx) upload. */
+export async function importItemsIntoBoxFromExcel(input: {
+  boxId: string;
+  fileBase64: string;
+}): Promise<ImportItemsResult> {
+  try {
+    const userId = await requireUserId();
+    const box = await prisma.item.findFirst({
+      where: { id: input.boxId, userId, isBox: true },
+      select: { id: true, locationId: true },
+    });
+
+    if (!box) {
+      return { ok: false, message: "Box not found." };
+    }
+
+    const binary = Buffer.from(input.fileBase64, "base64");
+    const parsed = parseBoxItemsExcel(
+      binary.buffer.slice(
+        binary.byteOffset,
+        binary.byteOffset + binary.byteLength,
+      ),
+    );
+    if (!parsed.ok) {
+      return { ok: false, message: parsed.message };
+    }
+
+    let created = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < parsed.items.length; i += 1) {
+      const row = parsed.items[i];
+      const rowNumber = i + 2;
+      const name = row.name.trim();
+      if (!name) {
+        errors.push(`Row ${rowNumber}: name is required.`);
+        continue;
+      }
+
+      const quantityRaw = row.quantity.trim();
+      const quantity = quantityRaw === "" ? 1 : Number(quantityRaw);
+      if (!Number.isFinite(quantity) || quantity < 0) {
+        errors.push(`Row ${rowNumber}: quantity must be zero or greater.`);
+        continue;
+      }
+
+      const brand = row.brand.trim();
+      const desc = row.desc.trim();
+      const unit = row.unit.trim() || "個";
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          const item = await tx.item.create({
+            data: {
+              name,
+              brand,
+              desc,
+              quantity: Math.floor(quantity),
+              unit,
+              locationId: box.locationId,
+              userId,
+              isBox: false,
+              boxPurpose: "",
+            },
+          });
+
+          await tx.itemRelation.createMany({
+            data: [
+              {
+                fromItemId: box.id,
+                toItemId: item.id,
+                type: BOX_CONTAINS_TYPE,
+                userId,
+              },
+              {
+                fromItemId: item.id,
+                toItemId: box.id,
+                type: BOX_IN_TYPE,
+                userId,
+              },
+            ],
+          });
+        });
+        created += 1;
+      } catch {
+        errors.push(`Row ${rowNumber}: failed to create item.`);
+      }
+    }
+
+    revalidatePath("/items");
+    revalidatePath(`/items/${box.id}`);
+    revalidatePath("/dashboard");
+
+    if (created === 0) {
+      return {
+        ok: false,
+        message: "No items were imported.",
+        created: 0,
+        failed: errors.length,
+        errors: errors.slice(0, 10),
+      };
+    }
+
+    const failed = errors.length;
+    return {
+      ok: true,
+      message:
+        failed > 0
+          ? `Imported ${created} item(s) into box; ${failed} row(s) failed.`
+          : `Imported ${created} item(s) into box.`,
+      created,
+      failed,
+      errors: errors.slice(0, 10),
+    };
+  } catch {
+    return { ok: false, message: "Failed to import Excel." };
+  }
+}
+
 export async function updateItem(input: {
   id: string;
   name: string;
@@ -465,14 +593,6 @@ export async function deleteItem(id: string): Promise<ItemActionResult> {
     return { ok: false, message: "Failed to delete item." };
   }
 }
-
-export type ImportItemsResult = {
-  ok: boolean;
-  message: string;
-  created?: number;
-  failed?: number;
-  errors?: string[];
-};
 
 export async function importItemsFromCsv(
   csvText: string,

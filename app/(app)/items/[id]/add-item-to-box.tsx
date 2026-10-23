@@ -1,10 +1,14 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
-import { App, Button, Form, Input, InputNumber } from "antd";
+import { DownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { App, Button, Form, Input, InputNumber, Space, Upload } from "antd";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { createItemInBox } from "@/lib/actions/items";
+import {
+  createItemInBox,
+  importItemsIntoBoxFromExcel,
+} from "@/lib/actions/items";
+import { buildBoxItemsExcelTemplate } from "@/lib/excel/box-items-excel";
 
 type FormValues = {
   name: string;
@@ -19,11 +23,65 @@ type AddItemToBoxProps = {
   boxName: string;
 };
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Failed to read file."));
+        return;
+      }
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
   const { message } = App.useApp();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [form] = Form.useForm<FormValues>();
+
+  function downloadTemplate() {
+    const bytes = buildBoxItemsExcelTemplate();
+    const blob = new Blob([Uint8Array.from(bytes)], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "box-items-template.xlsx";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function onImportExcel(file: File) {
+    startTransition(async () => {
+      try {
+        const fileBase64 = await fileToBase64(file);
+        const result = await importItemsIntoBoxFromExcel({ boxId, fileBase64 });
+        if (!result.ok) {
+          message.error(result.message);
+          if (result.errors?.length) {
+            message.warning(result.errors.join(" "));
+          }
+          return;
+        }
+        message.success(result.message);
+        if (result.errors?.length) {
+          message.warning(result.errors.join(" "));
+        }
+        router.refresh();
+      } catch {
+        message.error("Failed to import Excel.");
+      }
+    });
+    return false;
+  }
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
@@ -64,11 +122,26 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
       <h2 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 600 }}>
         Add item to this box
       </h2>
-      <p style={{ margin: "0 0 16px", color: "var(--muted)", fontSize: 13 }}>
+      <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 13 }}>
         Creates a new item with relations: this box{" "}
         <em>contains</em> it, and the item is <em>in</em>{" "}
         <strong style={{ color: "var(--foreground)" }}>{boxName}</strong>.
       </p>
+
+      <Space wrap style={{ marginBottom: 16 }}>
+        <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
+          Excel template
+        </Button>
+        <Upload
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          showUploadList={false}
+          beforeUpload={onImportExcel}
+        >
+          <Button icon={<UploadOutlined />} loading={pending}>
+            Import Excel
+          </Button>
+        </Upload>
+      </Space>
 
       <Form
         form={form}
