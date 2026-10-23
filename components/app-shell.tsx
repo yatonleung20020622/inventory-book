@@ -226,10 +226,8 @@ function PageContentFrame({
     return (
       <div
         style={{
-          minHeight: "100%",
           minWidth: 0,
           maxWidth: "100%",
-          overflowX: "hidden",
           color: "var(--foreground)",
         }}
       >
@@ -244,10 +242,8 @@ function PageContentFrame({
         background: "var(--card-bg)",
         padding: isMobile ? 14 : 24,
         borderRadius: 8,
-        minHeight: "100%",
         minWidth: 0,
         maxWidth: "100%",
-        overflowX: "hidden",
         color: "var(--foreground)",
       }}
     >
@@ -297,7 +293,13 @@ export function AppShell({
   }, [isMobile]);
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout
+      style={{
+        height: "100dvh",
+        maxHeight: "100dvh",
+        overflow: "hidden",
+      }}
+    >
       {!isMobile ? (
         <Sider
           collapsible
@@ -306,7 +308,7 @@ export function AppShell({
           trigger={null}
           width={220}
           collapsedWidth={80}
-          style={{ background: "var(--sider-bg)" }}
+          style={{ background: "var(--sider-bg)", height: "100%", overflow: "auto" }}
         >
           <div style={{ height: "100%" }}>
             <SideNav
@@ -352,7 +354,7 @@ export function AppShell({
         />
       </Drawer>
 
-      <Layout>
+      <Layout style={{ minHeight: 0, minWidth: 0, overflow: "hidden" }}>
         <Header
           style={{
             background: "var(--header-bg)",
@@ -362,6 +364,7 @@ export function AppShell({
             justifyContent: "space-between",
             gap: 12,
             borderBottom: "1px solid var(--border-color)",
+            flexShrink: 0,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -411,9 +414,10 @@ export function AppShell({
           style={{
             padding: isMobile ? 12 : 24,
             background: "var(--page-bg)",
-            minHeight: 280,
+            flex: 1,
+            minHeight: 0,
             minWidth: 0,
-            overflowX: "hidden",
+            overflow: "auto",
           }}
         >
           <PageAboveCardProvider>
@@ -429,6 +433,7 @@ export function AppShell({
             color: "var(--muted)",
             padding: "12px 24px 20px",
             fontSize: 13,
+            flexShrink: 0,
           }}
         >
           <div

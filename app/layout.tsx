@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="h-full">
         <Suspense fallback={null}>
           <Providers initialTheme={initialTheme}>{children}</Providers>
         </Suspense>

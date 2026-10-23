@@ -8,7 +8,8 @@ export default function BlankLayout({ children }: { children: ReactNode }) {
   return (
     <main
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
+        overflow: "auto",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
