@@ -6,6 +6,7 @@ import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { PageLoading } from "@/components/page-loading";
 import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
+import { AddItemToBox } from "./add-item-to-box";
 import { ItemRelations } from "./item-relations";
 
 function DetailRow({
@@ -188,12 +189,17 @@ async function ItemDetails({
           />
         </div>
 
-        <ItemRelations
-          itemId={item.id}
-          itemName={item.name}
-          relations={relations}
-          itemOptions={itemOptions}
-        />
+        <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
+          {item.isBox ? (
+            <AddItemToBox boxId={item.id} boxName={item.name} />
+          ) : null}
+          <ItemRelations
+            itemId={item.id}
+            itemName={item.name}
+            relations={relations}
+            itemOptions={itemOptions}
+          />
+        </div>
       </div>
     </>
   );

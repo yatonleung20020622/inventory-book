@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { BOX_CONTAINS_TYPE, BOX_IN_TYPE } from "@/lib/box-relation";
 import { parseCsv, rowsToItemCsv } from "@/lib/csv/items-csv";
 import { prisma } from "@/lib/prisma";
 
@@ -38,6 +39,7 @@ export type ItemRecord = {
 export type ItemActionResult = {
   ok: boolean;
   message: string;
+  itemId?: string;
 };
 
 type ItemRow = {
@@ -263,6 +265,88 @@ export async function createItem(input: {
       return { ok: false, message: error.message };
     }
     return { ok: false, message: "Failed to create item." };
+  }
+}
+
+/** Create an item inside a box with "contains" (box→item) and "in" (item→box). */
+export async function createItemInBox(input: {
+  boxId: string;
+  name: string;
+  brand?: string;
+  quantity?: number;
+  unit?: string;
+  desc?: string;
+}): Promise<ItemActionResult> {
+  try {
+    const userId = await requireUserId();
+    const name = input.name.trim();
+    const brand = (input.brand ?? "").trim();
+    const desc = (input.desc ?? "").trim();
+    const quantity = input.quantity ?? 1;
+    const unit = (input.unit ?? "個").trim() || "個";
+
+    if (!name) {
+      return { ok: false, message: "Item name is required." };
+    }
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      return { ok: false, message: "Quantity must be zero or greater." };
+    }
+
+    const box = await prisma.item.findFirst({
+      where: { id: input.boxId, userId, isBox: true },
+      select: { id: true, locationId: true },
+    });
+
+    if (!box) {
+      return { ok: false, message: "Box not found." };
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const item = await tx.item.create({
+        data: {
+          name,
+          brand,
+          desc,
+          quantity: Math.floor(quantity),
+          unit,
+          locationId: box.locationId,
+          userId,
+          isBox: false,
+          boxPurpose: "",
+        },
+      });
+
+      await tx.itemRelation.createMany({
+        data: [
+          {
+            fromItemId: box.id,
+            toItemId: item.id,
+            type: BOX_CONTAINS_TYPE,
+            userId,
+          },
+          {
+            fromItemId: item.id,
+            toItemId: box.id,
+            type: BOX_IN_TYPE,
+            userId,
+          },
+        ],
+      });
+
+      return item;
+    });
+
+    revalidatePath("/items");
+    revalidatePath(`/items/${box.id}`);
+    revalidatePath(`/items/${created.id}`);
+    revalidatePath("/dashboard");
+    return {
+      ok: true,
+      message: "Item created in box.",
+      itemId: created.id,
+    };
+  } catch {
+    return { ok: false, message: "Failed to create item in box." };
   }
 }
 
