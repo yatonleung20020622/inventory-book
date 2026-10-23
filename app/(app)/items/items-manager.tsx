@@ -356,6 +356,7 @@ export function ItemsManager({
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
+  const [pageSize, setPageSize] = useState(10);
   const brandOptions = uniqueBrands(items);
 
   function openCreate() {
@@ -489,7 +490,13 @@ export function ItemsManager({
         rowKey="id"
         dataSource={items}
         loading={pending}
-        pagination={{ pageSize: 10, simple: true }}
+        pagination={{
+          simple: true,
+          pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: [10, 20, 50, 100],
+          onShowSizeChange: (_page, size) => setPageSize(size),
+        }}
         scroll={{ x: 1360 }}
         columns={[
           {
