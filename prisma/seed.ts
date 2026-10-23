@@ -598,6 +598,14 @@ async function seedDemoInventory(userId: string, commenterId: string) {
   };
 }
 
+function wantsDemoSeed() {
+  if (process.argv.includes("--demo")) {
+    return true;
+  }
+  const value = process.env.SEED_DEMO?.trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
 async function main() {
   const admin = await upsertUser({
     email: "yatonleung20020622@gmail.com",
@@ -620,6 +628,15 @@ async function main() {
   console.log(
     `Seeded user: ${demoUser.username} <${demoUser.email}> role=${demoUser.role}`,
   );
+
+  const seedDemo = wantsDemoSeed();
+  if (!seedDemo) {
+    console.log(
+      "Skipped fake demo inventory. Use SEED_DEMO=true or npm run db:seed:demo to include it.",
+    );
+    console.log("Log in as Andrew Leung / password (or the email).");
+    return;
+  }
 
   const reset =
     process.env.SEED_RESET === "1" || process.env.SEED_RESET === "true";

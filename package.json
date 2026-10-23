@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed.ts --demo",
     "db:setup": "npm run db:ensure && npm run db:deploy && npm run db:seed",
+    "db:setup:demo": "npm run db:ensure && npm run db:deploy && npm run db:seed:demo",
     "postinstall": "prisma generate"
   },
   "prisma": {
