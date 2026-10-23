@@ -1,7 +1,7 @@
-import { Tag } from "antd";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { CategoryTag } from "@/components/category-tag";
 import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { PageLoading } from "@/components/page-loading";
 import { listItemRelations } from "@/lib/actions/item-relations";
@@ -136,9 +136,11 @@ async function ItemDetails({
               item.categories.length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {item.categories.map((category) => (
-                    <Tag key={category.id} style={{ marginInlineEnd: 0 }}>
-                      {category.name}
-                    </Tag>
+                    <CategoryTag
+                      key={category.id}
+                      name={category.name}
+                      color={category.color}
+                    />
                   ))}
                 </div>
               ) : (

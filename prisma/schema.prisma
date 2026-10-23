@@ -59,6 +59,7 @@ model Item {
 model Category {
   id        String         @id @default(cuid())
   name      String
+  color     String         @default("")
   userId    String
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     ItemCategory[]

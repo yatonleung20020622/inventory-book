@@ -147,21 +147,24 @@ async function seedDemoInventory(userId: string, commenterId: string) {
     },
   });
 
-  const categoryNames = [
-    "Electronics",
-    "Cables",
-    "Furniture",
-    "Kitchen",
-    "Books",
-    "Wearables",
-    "Tools",
-    "Stationery",
-    "Sports",
-    "Misc",
+  const categorySeeds = [
+    { name: "Electronics", color: "#1677FF" },
+    { name: "Cables", color: "#13C2C2" },
+    { name: "Furniture", color: "#FA8C16" },
+    { name: "Kitchen", color: "#52C41A" },
+    { name: "Books", color: "#722ED1" },
+    { name: "Wearables", color: "#EB2F96" },
+    { name: "Tools", color: "#8C8C8C" },
+    { name: "Stationery", color: "#2F54EB" },
+    { name: "Sports", color: "#FA541C" },
+    { name: "Misc", color: "#595959" },
   ] as const;
+  const categoryNames = categorySeeds.map((entry) => entry.name);
   const categories = await Promise.all(
-    categoryNames.map((name) =>
-      prisma.category.create({ data: { name, userId } }),
+    categorySeeds.map((entry) =>
+      prisma.category.create({
+        data: { name: entry.name, color: entry.color, userId },
+      }),
     ),
   );
   const cat = Object.fromEntries(
@@ -362,43 +365,43 @@ async function seedDemoInventory(userId: string, commenterId: string) {
     category: (typeof categoryNames)[number];
     basePrice: number;
   }[] = [
-    { label: "USB-A to C 轉接頭", brand: "UGREEN", unit: "個", category: "Cables", basePrice: 45 },
-    { label: "Lightning 線", brand: "Baseus", unit: "條", category: "Cables", basePrice: 80 },
-    { label: "延長線 6位", brand: "Huntkey", unit: "條", category: "Electronics", basePrice: 120 },
-    { label: "無線滑鼠", brand: "Logitech", unit: "隻", category: "Electronics", basePrice: 250 },
-    { label: "USB 手指 64GB", brand: "SanDisk", unit: "支", category: "Electronics", basePrice: 90 },
-    { label: "外置 SSD 1TB", brand: "Samsung", unit: "個", category: "Electronics", basePrice: 780 },
-    { label: "Webcam", brand: "Logitech", unit: "部", category: "Electronics", basePrice: 450 },
-    { label: "藍牙喇叭", brand: "JBL", unit: "個", category: "Electronics", basePrice: 600 },
-    { label: "移動電源 20000mAh", brand: "Anker", unit: "個", category: "Electronics", basePrice: 320 },
-    { label: "螢幕掛燈", brand: "Xiaomi", unit: "盞", category: "Electronics", basePrice: 280 },
-    { label: "摺疊層架", brand: "MUJI", unit: "個", category: "Furniture", basePrice: 199 },
-    { label: "收納箱", brand: "IKEA", unit: "個", category: "Furniture", basePrice: 79 },
-    { label: "書檔", brand: "IKEA", unit: "對", category: "Furniture", basePrice: 59 },
-    { label: "掛牆層板", brand: "IKEA", unit: "塊", category: "Furniture", basePrice: 149 },
-    { label: "陶瓷碗套裝", brand: "IKEA", unit: "套", category: "Kitchen", basePrice: 120 },
-    { label: "廚刀", brand: "Global", unit: "把", category: "Kitchen", basePrice: 480 },
-    { label: "咖啡磨", brand: "Timemore", unit: "個", category: "Kitchen", basePrice: 350 },
-    { label: "保溫杯", brand: "Zojirushi", unit: "個", category: "Kitchen", basePrice: 260 },
-    { label: "小說", brand: "Penguin", unit: "本", category: "Books", basePrice: 120 },
-    { label: "技術手冊", brand: "O'Reilly", unit: "本", category: "Books", basePrice: 420 },
-    { label: "漫畫單行本", brand: "Shueisha", unit: "本", category: "Books", basePrice: 70 },
-    { label: "運動手環", brand: "Xiaomi", unit: "隻", category: "Wearables", basePrice: 180 },
-    { label: "太陽眼鏡", brand: "Uniqlo", unit: "副", category: "Wearables", basePrice: 99 },
-    { label: "背包", brand: "Herschel", unit: "個", category: "Wearables", basePrice: 550 },
-    { label: "螺絲批套裝", brand: "Wera", unit: "套", category: "Tools", basePrice: 380 },
-    { label: "膠水槍", brand: "Bosch", unit: "支", category: "Tools", basePrice: 160 },
-    { label: "捲尺 5m", brand: "Stanley", unit: "把", category: "Tools", basePrice: 55 },
-    { label: "筆記本 A5", brand: "Moleskine", unit: "本", category: "Stationery", basePrice: 110 },
-    { label: "原子筆盒", brand: "Pilot", unit: "盒", category: "Stationery", basePrice: 45 },
-    { label: "白板筆", brand: "Staedtler", unit: "支", category: "Stationery", basePrice: 18 },
-    { label: "瑜珈墊", brand: "Lululemon", unit: "張", category: "Sports", basePrice: 480 },
-    { label: "啞鈴 5kg", brand: "Decathlon", unit: "對", category: "Sports", basePrice: 220 },
-    { label: "跳繩", brand: "Decathlon", unit: "條", category: "Sports", basePrice: 60 },
-    { label: "雜物袋", brand: "无印良品", unit: "個", category: "Misc", basePrice: 39 },
-    { label: "雨傘", brand: "Amvel", unit: "把", category: "Misc", basePrice: 150 },
-    { label: "口罩盒", brand: "Generic", unit: "個", category: "Misc", basePrice: 25 },
-  ];
+      { label: "USB-A to C 轉接頭", brand: "UGREEN", unit: "個", category: "Cables", basePrice: 45 },
+      { label: "Lightning 線", brand: "Baseus", unit: "條", category: "Cables", basePrice: 80 },
+      { label: "延長線 6位", brand: "Huntkey", unit: "條", category: "Electronics", basePrice: 120 },
+      { label: "無線滑鼠", brand: "Logitech", unit: "隻", category: "Electronics", basePrice: 250 },
+      { label: "USB 手指 64GB", brand: "SanDisk", unit: "支", category: "Electronics", basePrice: 90 },
+      { label: "外置 SSD 1TB", brand: "Samsung", unit: "個", category: "Electronics", basePrice: 780 },
+      { label: "Webcam", brand: "Logitech", unit: "部", category: "Electronics", basePrice: 450 },
+      { label: "藍牙喇叭", brand: "JBL", unit: "個", category: "Electronics", basePrice: 600 },
+      { label: "移動電源 20000mAh", brand: "Anker", unit: "個", category: "Electronics", basePrice: 320 },
+      { label: "螢幕掛燈", brand: "Xiaomi", unit: "盞", category: "Electronics", basePrice: 280 },
+      { label: "摺疊層架", brand: "MUJI", unit: "個", category: "Furniture", basePrice: 199 },
+      { label: "收納箱", brand: "IKEA", unit: "個", category: "Furniture", basePrice: 79 },
+      { label: "書檔", brand: "IKEA", unit: "對", category: "Furniture", basePrice: 59 },
+      { label: "掛牆層板", brand: "IKEA", unit: "塊", category: "Furniture", basePrice: 149 },
+      { label: "陶瓷碗套裝", brand: "IKEA", unit: "套", category: "Kitchen", basePrice: 120 },
+      { label: "廚刀", brand: "Global", unit: "把", category: "Kitchen", basePrice: 480 },
+      { label: "咖啡磨", brand: "Timemore", unit: "個", category: "Kitchen", basePrice: 350 },
+      { label: "保溫杯", brand: "Zojirushi", unit: "個", category: "Kitchen", basePrice: 260 },
+      { label: "小說", brand: "Penguin", unit: "本", category: "Books", basePrice: 120 },
+      { label: "技術手冊", brand: "O'Reilly", unit: "本", category: "Books", basePrice: 420 },
+      { label: "漫畫單行本", brand: "Shueisha", unit: "本", category: "Books", basePrice: 70 },
+      { label: "運動手環", brand: "Xiaomi", unit: "隻", category: "Wearables", basePrice: 180 },
+      { label: "太陽眼鏡", brand: "Uniqlo", unit: "副", category: "Wearables", basePrice: 99 },
+      { label: "背包", brand: "Herschel", unit: "個", category: "Wearables", basePrice: 550 },
+      { label: "螺絲批套裝", brand: "Wera", unit: "套", category: "Tools", basePrice: 380 },
+      { label: "膠水槍", brand: "Bosch", unit: "支", category: "Tools", basePrice: 160 },
+      { label: "捲尺 5m", brand: "Stanley", unit: "把", category: "Tools", basePrice: 55 },
+      { label: "筆記本 A5", brand: "Moleskine", unit: "本", category: "Stationery", basePrice: 110 },
+      { label: "原子筆盒", brand: "Pilot", unit: "盒", category: "Stationery", basePrice: 45 },
+      { label: "白板筆", brand: "Staedtler", unit: "支", category: "Stationery", basePrice: 18 },
+      { label: "瑜珈墊", brand: "Lululemon", unit: "張", category: "Sports", basePrice: 480 },
+      { label: "啞鈴 5kg", brand: "Decathlon", unit: "對", category: "Sports", basePrice: 220 },
+      { label: "跳繩", brand: "Decathlon", unit: "條", category: "Sports", basePrice: 60 },
+      { label: "雜物袋", brand: "无印良品", unit: "個", category: "Misc", basePrice: 39 },
+      { label: "雨傘", brand: "Amvel", unit: "把", category: "Misc", basePrice: 150 },
+      { label: "口罩盒", brand: "Generic", unit: "個", category: "Misc", basePrice: 25 },
+    ];
 
   const generated: ItemSeed[] = [];
   let n = 1;
@@ -425,12 +428,12 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       categoryIds: [cat[template.category]],
       ...(n % 17 === 0
         ? {
-            forSale: {
-              salePrice: String(Math.max(20, Math.floor(price * 0.6))),
-              condition: n % 2 === 0 ? "Good" : "Fair",
-              note: "Seeded listing for Selling now",
-            },
-          }
+          forSale: {
+            salePrice: String(Math.max(20, Math.floor(price * 0.6))),
+            condition: n % 2 === 0 ? "Good" : "Fair",
+            note: "Seeded listing for Selling now",
+          },
+        }
         : {}),
     });
     n += 1;

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 export type ItemCategorySummary = {
   id: string;
   name: string;
+  color: string;
 };
 
 export type ItemRecord = {
@@ -50,7 +51,7 @@ type ItemRow = {
   remarks: string;
   locationId: string | null;
   location: { name: string } | null;
-  categories?: { category: { id: string; name: string } }[];
+  categories?: { category: { id: string; name: string; color: string } }[];
   saleListings?: { id: string; salePrice: string }[];
   createdAt: Date;
   updatedAt: Date;
@@ -127,6 +128,7 @@ function toItemRecord(item: ItemRow): ItemRecord {
     categories: (item.categories ?? []).map((row) => ({
       id: row.category.id,
       name: row.category.name,
+      color: row.category.color,
     })),
     onSale: Boolean(listing),
     salePrice: listing?.salePrice ?? null,
@@ -142,7 +144,7 @@ const itemInclude = {
   categories: {
     select: {
       category: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, color: true },
       },
     },
     orderBy: {

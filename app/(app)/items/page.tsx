@@ -24,6 +24,7 @@ async function ItemsContent() {
       categories={categories.map((category) => ({
         id: category.id,
         name: category.name,
+        color: category.color,
       }))}
     />
   );

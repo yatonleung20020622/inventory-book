@@ -33,6 +33,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { CategoryTag } from "@/components/category-tag";
 import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { PageCardless } from "@/components/page-above-card";
 import { TableFrame } from "@/components/table-frame";
@@ -56,6 +57,7 @@ type LocationOption = {
 type CategoryOption = {
   id: string;
   name: string;
+  color: string;
 };
 
 function getDefaultLocationId(locations: LocationOption[]): string | null {
@@ -766,9 +768,11 @@ export function ItemsManager({
               value.length > 0 ? (
                 <Space size={[4, 4]} wrap>
                   {value.map((category) => (
-                    <Tag key={category.id} style={{ marginInlineEnd: 0 }}>
-                      {category.name}
-                    </Tag>
+                    <CategoryTag
+                      key={category.id}
+                      name={category.name}
+                      color={category.color}
+                    />
                   ))}
                 </Space>
               ) : (
