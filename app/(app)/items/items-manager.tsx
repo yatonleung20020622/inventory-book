@@ -13,6 +13,7 @@ import {
 import {
   App,
   Button,
+  Divider,
   Form,
   Input,
   Popconfirm,
@@ -32,12 +33,16 @@ import { TableFrame } from "@/components/table-frame";
 import {
   createItem,
   deleteItem,
+  exportItemsCsv,
   importItemsFromCsv,
+  previewItemCsvUpdates,
   updateItem,
+  type ItemCsvUpdatePreview,
   type ItemRecord,
 } from "@/lib/actions/items";
 import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
 import { isFreeSalePrice } from "@/lib/sale-price";
+import { ItemCsvUpdateModal } from "./item-csv-update-modal";
 import {
   ItemFormModal,
   type ItemFormCategoryOption,
@@ -153,6 +158,12 @@ export function ItemsManager({
   const [page, setPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState<ItemFilters>(emptyFilters);
   const [filters, setFilters] = useState<ItemFilters>(emptyFilters);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [updatePreview, setUpdatePreview] = useState<{
+    updates: ItemCsvUpdatePreview[];
+    unchangedCount: number;
+    errors: string[];
+  }>({ updates: [], unchangedCount: 0, errors: [] });
   const brandOptions = uniqueBrands(items);
   const filteredItems = filterItems(items, filters);
   const hasActiveFilters = filtersActive(filters);
@@ -262,6 +273,52 @@ export function ItemsManager({
           message.warning(result.errors.join(" "));
         }
         router.refresh();
+      } catch {
+        message.error("Failed to read CSV file.");
+      }
+    });
+    return false;
+  }
+
+  function onExportCsv() {
+    startTransition(async () => {
+      const result = await exportItemsCsv();
+      if (!result.ok) {
+        message.error(result.message);
+        return;
+      }
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "items-export.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      message.success("CSV exported.");
+    });
+  }
+
+  function onUpdatesFromCsv(file: File) {
+    startTransition(async () => {
+      try {
+        const text = await file.text();
+        const result = await previewItemCsvUpdates(text);
+        if (!result.ok) {
+          message.error(result.message);
+          if (result.errors?.length) {
+            message.warning(result.errors.slice(0, 5).join(" "));
+          }
+          return;
+        }
+        setUpdatePreview({
+          updates: result.updates ?? [],
+          unchangedCount: result.unchangedCount ?? 0,
+          errors: result.errors ?? [],
+        });
+        setUpdateModalOpen(true);
+        if ((result.updates?.length ?? 0) === 0) {
+          message.info(result.message);
+        }
       } catch {
         message.error("Failed to read CSV file.");
       }
@@ -414,23 +471,91 @@ export function ItemsManager({
             }}
           >
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>Items</h1>
-            <Space wrap>
-              <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
-                Download template
-              </Button>
-              <Upload
-                accept=".csv,text/csv"
-                showUploadList={false}
-                beforeUpload={onImportCsv}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+                gap: 12,
+              }}
+            >
+              <div style={{ display: "grid", gap: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    letterSpacing: 0.02,
+                    paddingInline: 2,
+                  }}
+                >
+                  Add via CSV
+                </span>
+                <Space size={8} wrap>
+                  <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
+                    Download template
+                  </Button>
+                  <Upload
+                    accept=".csv,text/csv"
+                    showUploadList={false}
+                    beforeUpload={onImportCsv}
+                  >
+                    <Button icon={<UploadOutlined />} loading={pending}>
+                      Import CSV
+                    </Button>
+                  </Upload>
+                </Space>
+              </div>
+
+              <Divider
+                orientation="vertical"
+                style={{ height: 36, margin: "0 2px 2px", alignSelf: "flex-end" }}
+              />
+
+              <div style={{ display: "grid", gap: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    letterSpacing: 0.02,
+                    paddingInline: 2,
+                  }}
+                >
+                  Edit via CSV
+                </span>
+                <Space size={8} wrap>
+                  <Button
+                    icon={<DownloadOutlined />}
+                    loading={pending}
+                    onClick={onExportCsv}
+                  >
+                    Export CSV
+                  </Button>
+                  <Upload
+                    accept=".csv,text/csv"
+                    showUploadList={false}
+                    beforeUpload={onUpdatesFromCsv}
+                  >
+                    <Button icon={<UploadOutlined />} loading={pending}>
+                      Updates from CSV
+                    </Button>
+                  </Upload>
+                </Space>
+              </div>
+
+              <Divider
+                orientation="vertical"
+                style={{ height: 36, margin: "0 2px 2px", alignSelf: "flex-end" }}
+              />
+
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={openCreate}
+                style={{ alignSelf: "flex-end" }}
               >
-                <Button icon={<UploadOutlined />} loading={pending}>
-                  Import CSV
-                </Button>
-              </Upload>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
                 Add item
               </Button>
-            </Space>
+            </div>
           </div>
 
           <TableFrame>
@@ -636,6 +761,15 @@ export function ItemsManager({
         brandOptions={brandOptions}
         onCancel={closeModal}
         onSubmit={onSubmit}
+      />
+
+      <ItemCsvUpdateModal
+        open={updateModalOpen}
+        updates={updatePreview.updates}
+        unchangedCount={updatePreview.unchangedCount}
+        errors={updatePreview.errors}
+        onClose={() => setUpdateModalOpen(false)}
+        onApplied={() => router.refresh()}
       />
     </>
   );

@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { BOX_CONTAINS_TYPE, BOX_IN_TYPE } from "@/lib/box-relation";
-import { parseCsv, rowsToItemCsv } from "@/lib/csv/items-csv";
+import {
+  buildItemsExportCsv,
+  parseCsv,
+  parseIsBoxCell,
+  rowsToItemCsv,
+  rowsToItemUpdateCsv,
+  type ItemUpdateCsvRow,
+} from "@/lib/csv/items-csv";
 import { parseBoxItemsExcel } from "@/lib/excel/box-items-excel";
 import { prisma } from "@/lib/prisma";
 
@@ -48,6 +55,43 @@ export type ImportItemsResult = {
   message: string;
   created?: number;
   failed?: number;
+  errors?: string[];
+};
+
+export type ItemCsvFieldChange = {
+  field: string;
+  from: string;
+  to: string;
+};
+
+export type ItemCsvUpdatePreview = {
+  key: string;
+  id: string;
+  name: string;
+  changes: ItemCsvFieldChange[];
+  payload: {
+    name: string;
+    brand: string;
+    majorColor: string;
+    desc: string;
+    quantity: number;
+    unit: string;
+    estimatedPrice: string;
+    actualPrice: string;
+    isBox: boolean;
+    boxPurpose: string;
+    purchaseDate: string;
+    notice: string;
+    remarks: string;
+    locationId: string | null;
+  };
+};
+
+export type PreviewItemCsvUpdatesResult = {
+  ok: boolean;
+  message: string;
+  updates?: ItemCsvUpdatePreview[];
+  unchangedCount?: number;
   errors?: string[];
 };
 
@@ -692,5 +736,325 @@ export async function importItemsFromCsv(
     };
   } catch {
     return { ok: false, message: "Failed to import CSV." };
+  }
+}
+
+export async function exportItemsCsv(): Promise<
+  { ok: true; csv: string } | { ok: false; message: string }
+> {
+  try {
+    const items = await listItems();
+    const csv = buildItemsExportCsv(items);
+    return { ok: true, csv };
+  } catch {
+    return { ok: false, message: "Failed to export CSV." };
+  }
+}
+
+function normalizeCsvQuantity(
+  raw: string,
+): { ok: true; value: number } | { ok: false; message: string } {
+  const quantity = raw.trim() === "" ? 1 : Number(raw.trim());
+  if (!Number.isFinite(quantity) || quantity < 0) {
+    return { ok: false, message: "quantity must be zero or greater." };
+  }
+  return { ok: true, value: Math.floor(quantity) };
+}
+
+function compareItemFields(
+  existing: {
+    name: string;
+    brand: string;
+    majorColor: string;
+    desc: string;
+    quantity: number;
+    unit: string;
+    estimatedPrice: string;
+    actualPrice: string;
+    isBox: boolean;
+    boxPurpose: string;
+    purchaseDate: string;
+    notice: string;
+    remarks: string;
+    locationName: string | null;
+  },
+  next: {
+    name: string;
+    brand: string;
+    majorColor: string;
+    desc: string;
+    quantity: number;
+    unit: string;
+    estimatedPrice: string;
+    actualPrice: string;
+    isBox: boolean;
+    boxPurpose: string;
+    purchaseDate: string;
+    notice: string;
+    remarks: string;
+    locationName: string;
+  },
+): ItemCsvFieldChange[] {
+  const pairs: Array<{ field: string; from: string; to: string }> = [
+    { field: "name", from: existing.name, to: next.name },
+    { field: "brand", from: existing.brand, to: next.brand },
+    { field: "majorColor", from: existing.majorColor, to: next.majorColor },
+    { field: "desc", from: existing.desc, to: next.desc },
+    {
+      field: "quantity",
+      from: String(existing.quantity),
+      to: String(next.quantity),
+    },
+    { field: "unit", from: existing.unit, to: next.unit },
+    {
+      field: "estimatedPrice",
+      from: existing.estimatedPrice,
+      to: next.estimatedPrice,
+    },
+    {
+      field: "actualPrice",
+      from: existing.actualPrice,
+      to: next.actualPrice,
+    },
+    {
+      field: "isBox",
+      from: existing.isBox ? "true" : "false",
+      to: next.isBox ? "true" : "false",
+    },
+    { field: "boxPurpose", from: existing.boxPurpose, to: next.boxPurpose },
+    {
+      field: "purchaseDate",
+      from: existing.purchaseDate,
+      to: next.purchaseDate,
+    },
+    { field: "notice", from: existing.notice, to: next.notice },
+    { field: "remarks", from: existing.remarks, to: next.remarks },
+    {
+      field: "location",
+      from: existing.locationName ?? "",
+      to: next.locationName,
+    },
+  ];
+
+  return pairs.filter((pair) => pair.from !== pair.to);
+}
+
+function rowToUpdatePayload(
+  row: ItemUpdateCsvRow,
+  locationId: string | null,
+): ItemCsvUpdatePreview["payload"] {
+  const isBox = parseIsBoxCell(row.isBox);
+  const quantity = normalizeCsvQuantity(row.quantity);
+  return {
+    name: row.name.trim(),
+    brand: row.brand.trim(),
+    majorColor: row.majorColor.trim(),
+    desc: row.desc.trim(),
+    quantity: quantity.ok ? quantity.value : 1,
+    unit: row.unit.trim() || "個",
+    estimatedPrice: row.estimatedPrice.trim(),
+    actualPrice: row.actualPrice.trim(),
+    isBox,
+    boxPurpose: isBox ? row.boxPurpose.trim() : "",
+    purchaseDate: row.purchaseDate.trim(),
+    notice: row.notice.trim(),
+    remarks: row.remarks.trim(),
+    locationId,
+  };
+}
+
+export async function previewItemCsvUpdates(
+  csvText: string,
+): Promise<PreviewItemCsvUpdatesResult> {
+  try {
+    const parsed = rowsToItemUpdateCsv(parseCsv(csvText));
+    if (!parsed.ok) {
+      return { ok: false, message: parsed.message };
+    }
+
+    const userId = await requireUserId();
+    const [existingItems, locations] = await Promise.all([
+      prisma.item.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+          brand: true,
+          majorColor: true,
+          desc: true,
+          quantity: true,
+          unit: true,
+          estimatedPrice: true,
+          actualPrice: true,
+          isBox: true,
+          boxPurpose: true,
+          purchaseDate: true,
+          notice: true,
+          remarks: true,
+          locationId: true,
+          location: { select: { name: true } },
+        },
+      }),
+      prisma.location.findMany({
+        where: { userId },
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    const itemById = new Map(existingItems.map((item) => [item.id, item]));
+    const locationByName = new Map(
+      locations.map((location) => [
+        location.name.trim().toLowerCase(),
+        location.id,
+      ]),
+    );
+
+    const updates: ItemCsvUpdatePreview[] = [];
+    const errors: string[] = [];
+    let unchangedCount = 0;
+
+    for (let i = 0; i < parsed.items.length; i += 1) {
+      const row = parsed.items[i];
+      const rowNumber = i + 2;
+      const id = row.id.trim();
+
+      if (!id) {
+        errors.push(
+          `Row ${rowNumber}: id is required for updates. Use Import CSV to add new items.`,
+        );
+        continue;
+      }
+
+      const existing = itemById.get(id);
+      if (!existing) {
+        errors.push(`Row ${rowNumber}: item id was not found.`);
+        continue;
+      }
+
+      const name = row.name.trim();
+      if (!name) {
+        errors.push(`Row ${rowNumber}: name is required.`);
+        continue;
+      }
+
+      const quantityResult = normalizeCsvQuantity(row.quantity);
+      if (!quantityResult.ok) {
+        errors.push(`Row ${rowNumber}: ${quantityResult.message}`);
+        continue;
+      }
+
+      const locationName = row.location.trim();
+      let locationId: string | null = null;
+      if (locationName) {
+        const matched = locationByName.get(locationName.toLowerCase());
+        if (!matched) {
+          errors.push(
+            `Row ${rowNumber}: location "${locationName}" was not found.`,
+          );
+          continue;
+        }
+        locationId = matched;
+      }
+
+      const isBox = parseIsBoxCell(row.isBox);
+      const boxPurpose = isBox ? row.boxPurpose.trim() : "";
+      const next = {
+        name,
+        brand: row.brand.trim(),
+        majorColor: row.majorColor.trim(),
+        desc: row.desc.trim(),
+        quantity: quantityResult.value,
+        unit: row.unit.trim() || "個",
+        estimatedPrice: row.estimatedPrice.trim(),
+        actualPrice: row.actualPrice.trim(),
+        isBox,
+        boxPurpose,
+        purchaseDate: row.purchaseDate.trim(),
+        notice: row.notice.trim(),
+        remarks: row.remarks.trim(),
+        locationName,
+      };
+
+      const changes = compareItemFields(
+        {
+          ...existing,
+          locationName: existing.location?.name ?? null,
+        },
+        next,
+      );
+
+      if (changes.length === 0) {
+        unchangedCount += 1;
+        continue;
+      }
+
+      updates.push({
+        key: `${id}-${rowNumber}`,
+        id,
+        name: existing.name,
+        changes,
+        payload: rowToUpdatePayload(row, locationId),
+      });
+    }
+
+    if (updates.length === 0 && errors.length === 0) {
+      return {
+        ok: true,
+        message:
+          unchangedCount > 0
+            ? `No changes found (${unchangedCount} row(s) unchanged).`
+            : "No changes found.",
+        updates: [],
+        unchangedCount,
+        errors: [],
+      };
+    }
+
+    if (updates.length === 0) {
+      return {
+        ok: false,
+        message: "No valid updates to apply.",
+        updates: [],
+        unchangedCount,
+        errors: errors.slice(0, 20),
+      };
+    }
+
+    return {
+      ok: true,
+      message: `Found ${updates.length} update(s).`,
+      updates,
+      unchangedCount,
+      errors: errors.slice(0, 20),
+    };
+  } catch {
+    return { ok: false, message: "Failed to preview CSV updates." };
+  }
+}
+
+export async function applyItemCsvUpdate(
+  change: ItemCsvUpdatePreview,
+): Promise<ItemActionResult> {
+  try {
+    const userId = await requireUserId();
+    const existing = await prisma.item.findFirst({
+      where: { id: change.id, userId },
+      select: {
+        id: true,
+        categories: { select: { categoryId: true } },
+      },
+    });
+
+    if (!existing) {
+      return { ok: false, message: "Item not found." };
+    }
+
+    return updateItem({
+      id: change.id,
+      ...change.payload,
+      categoryIds: existing.categories.map((row) => row.categoryId),
+    });
+  } catch {
+    return { ok: false, message: "Failed to apply CSV update." };
   }
 }
