@@ -156,6 +156,20 @@ async function ItemDetails({
             value={item.estimatedPrice || <EmptyValue />}
           />
           <DetailRow
+            label="Actual price"
+            value={item.actualPrice || <EmptyValue />}
+          />
+          <DetailRow
+            label="Is a box"
+            value={item.isBox ? "Yes" : "No"}
+          />
+          {item.isBox ? (
+            <DetailRow
+              label="Box is mainly for"
+              value={item.boxPurpose || <EmptyValue />}
+            />
+          ) : null}
+          <DetailRow
             label="Purchase date"
             value={item.purchaseDate || <EmptyValue />}
           />

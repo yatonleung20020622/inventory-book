@@ -1,16 +1,23 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
+import { auth } from "@/auth";
 import { PageLoading } from "@/components/page-loading";
 import { APP_CHANNEL, APP_VERSION, getAppVersionLabel } from "@/lib/app-version";
+import { formatHkdTotal, sumItemValues } from "@/lib/item-price";
 import { listSharedSaleListings } from "@/lib/actions/sales";
 import { prisma } from "@/lib/prisma";
 import { ForSaleCarousel } from "./for-sale-carousel";
 
-async function DashboardStats() {
-  await connection();
-  const totalUsers = await prisma.user.count();
-
+function StatCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+}) {
   return (
     <div
       style={{
@@ -20,16 +27,65 @@ async function DashboardStats() {
         border: "1px solid var(--border-color)",
         minWidth: 200,
         flex: "1 1 200px",
-        maxWidth: 280,
+        maxWidth: 320,
       }}
     >
       <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 8 }}>
-        Total users
+        {label}
       </div>
-      <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.1 }}>
-        {totalUsers}
+      <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+        {value}
       </div>
+      {hint ? (
+        <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 8 }}>
+          {hint}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+async function DashboardStats() {
+  await connection();
+  const totalUsers = await prisma.user.count();
+
+  return (
+    <StatCard label="Total users" value={totalUsers} />
+  );
+}
+
+async function InventoryValueStats() {
+  await connection();
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return null;
+  }
+
+  const items = await prisma.item.findMany({
+    where: { userId },
+    select: {
+      estimatedPrice: true,
+      actualPrice: true,
+      quantity: true,
+    },
+  });
+
+  const { estimatedTotal, actualTotal } = sumItemValues(items);
+
+  return (
+    <>
+      <StatCard
+        label="Total estimated value"
+        value={formatHkdTotal(estimatedTotal)}
+        hint="Sum of estimated price × quantity"
+      />
+      <StatCard
+        label="Total actual value"
+        value={formatHkdTotal(actualTotal)}
+        hint="Sum of actual price × quantity"
+      />
+    </>
   );
 }
 
@@ -123,6 +179,13 @@ export default function DashboardPage() {
           fallback={<PageLoading label="Loading stats" variant="inline" />}
         >
           <DashboardStats />
+        </Suspense>
+        <Suspense
+          fallback={
+            <PageLoading label="Loading inventory value" variant="inline" />
+          }
+        >
+          <InventoryValueStats />
         </Suspense>
       </div>
       <div style={{ marginTop: 32 }}>

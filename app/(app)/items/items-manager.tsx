@@ -23,6 +23,7 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -151,6 +152,9 @@ type ItemFormValues = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
+  actualPrice: string;
+  isBox: boolean;
+  boxPurpose: string;
   purchaseDate: string;
   notice: string;
   remarks: string;
@@ -172,6 +176,9 @@ const emptyFormValues: ItemFormValues = {
   quantity: 1,
   unit: "個",
   estimatedPrice: "",
+  actualPrice: "",
+  isBox: false,
+  boxPurpose: "",
   purchaseDate: "",
   notice: "",
   remarks: "",
@@ -236,6 +243,7 @@ function ItemFormModal({
 }) {
   const [form] = Form.useForm<ItemFormValues>();
   const [brandSearch, setBrandSearch] = useState("");
+  const isBox = Form.useWatch("isBox", form);
 
   useEffect(() => {
     if (!open) return;
@@ -248,6 +256,9 @@ function ItemFormModal({
         quantity: editing.quantity,
         unit: editing.unit,
         estimatedPrice: editing.estimatedPrice,
+        actualPrice: editing.actualPrice,
+        isBox: editing.isBox,
+        boxPurpose: editing.boxPurpose,
         purchaseDate: editing.purchaseDate,
         notice: editing.notice,
         remarks: editing.remarks,
@@ -378,6 +389,39 @@ function ItemFormModal({
         <Form.Item label="Estimated price" name="estimatedPrice">
           <Input placeholder="e.g. 120 HKD" />
         </Form.Item>
+        <Form.Item label="Actual price" name="actualPrice">
+          <Input placeholder="e.g. 100 HKD" />
+        </Form.Item>
+        <Form.Item
+          label="Is a box"
+          name="isBox"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+        {isBox ? (
+          <Form.Item
+            label="Box is mainly for"
+            name="boxPurpose"
+            rules={[
+              {
+                validator: (_, value: string) =>
+                  value?.trim()
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error("Describe what this box is mainly for"),
+                      ),
+              },
+            ]}
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder="e.g. Charging cables and adapters"
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+        ) : null}
         <Form.Item
           label="Purchase date"
           name="purchaseDate"
@@ -466,7 +510,10 @@ export function ItemsManager({
         desc: values.desc,
         quantity: values.quantity,
         unit: values.unit,
-        estimatedPrice: values.estimatedPrice,
+        estimatedPrice: values.estimatedPrice ?? "",
+        actualPrice: values.actualPrice ?? "",
+        isBox: Boolean(values.isBox),
+        boxPurpose: values.boxPurpose ?? "",
         purchaseDate: values.purchaseDate ?? "",
         notice: values.notice ?? "",
         remarks: values.remarks,
@@ -703,24 +750,35 @@ export function ItemsManager({
                 setPage(1);
               },
             }}
-            scroll={{ x: 1360 }}
+            scroll={{ x: 1480 }}
             columns={[
           {
             title: "Name",
             dataIndex: "name",
             fixed: "left",
-            width: 180,
+            width: 240,
             render: (value: string, record) => (
               <Space size={6} wrap>
                 {record.notice.trim() ? (
                   <Tooltip title={record.notice}>
-                    <WarningOutlined
-                      style={{ color: "#faad14" }}
-                      aria-label="Has notice"
-                    />
+                    <span>
+                      <WarningOutlined
+                        style={{ color: "#faad14" }}
+                        aria-label="Has notice"
+                      />
+                    </span>
                   </Tooltip>
                 ) : null}
                 <Link href={`/items/${record.id}`}>{value}</Link>
+                {record.isBox ? (
+                  <Tooltip title="This item is a box">
+                    <span>
+                      <Tag color="purple" style={{ marginInlineEnd: 0 }}>
+                        {record.boxPurpose.trim() || "Box"}
+                      </Tag>
+                    </span>
+                  </Tooltip>
+                ) : null}
                 {record.onSale ? (
                   <Tooltip
                     title={
@@ -731,9 +789,11 @@ export function ItemsManager({
                           : "Posted for sale"
                     }
                   >
-                    <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                      On sale
-                    </Tag>
+                    <span>
+                      <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                        On sale
+                      </Tag>
+                    </span>
                   </Tooltip>
                 ) : null}
               </Space>
@@ -800,6 +860,14 @@ export function ItemsManager({
             dataIndex: "estimatedPrice",
             width: 120,
             ellipsis: true,
+          },
+          {
+            title: "Actual price",
+            dataIndex: "actualPrice",
+            width: 120,
+            ellipsis: true,
+            render: (value: string) =>
+              value ? value : <span style={{ opacity: 0.45 }}>-</span>,
           },
           {
             title: "Purchase date",

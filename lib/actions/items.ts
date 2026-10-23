@@ -20,6 +20,9 @@ export type ItemRecord = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
+  actualPrice: string;
+  isBox: boolean;
+  boxPurpose: string;
   purchaseDate: string;
   notice: string;
   remarks: string;
@@ -46,6 +49,9 @@ type ItemRow = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
+  actualPrice: string;
+  isBox: boolean;
+  boxPurpose: string;
   purchaseDate: string;
   notice: string;
   remarks: string;
@@ -120,6 +126,9 @@ function toItemRecord(item: ItemRow): ItemRecord {
     quantity: item.quantity,
     unit: item.unit,
     estimatedPrice: item.estimatedPrice,
+    actualPrice: item.actualPrice,
+    isBox: item.isBox,
+    boxPurpose: item.boxPurpose,
     purchaseDate: item.purchaseDate,
     notice: item.notice,
     remarks: item.remarks,
@@ -184,6 +193,9 @@ export async function createItem(input: {
   quantity?: number;
   unit?: string;
   estimatedPrice?: string;
+  actualPrice?: string;
+  isBox?: boolean;
+  boxPurpose?: string;
   purchaseDate?: string;
   notice?: string;
   remarks?: string;
@@ -199,6 +211,9 @@ export async function createItem(input: {
     const quantity = input.quantity ?? 1;
     const unit = (input.unit ?? "個").trim() || "個";
     const estimatedPrice = (input.estimatedPrice ?? "").trim();
+    const actualPrice = (input.actualPrice ?? "").trim();
+    const isBox = Boolean(input.isBox);
+    const boxPurpose = isBox ? (input.boxPurpose ?? "").trim() : "";
     const purchaseDate = (input.purchaseDate ?? "").trim();
     const notice = (input.notice ?? "").trim();
     const remarks = (input.remarks ?? "").trim();
@@ -221,6 +236,9 @@ export async function createItem(input: {
         quantity: Math.floor(quantity),
         unit,
         estimatedPrice,
+        actualPrice,
+        isBox,
+        boxPurpose,
         purchaseDate,
         notice,
         remarks,
@@ -234,6 +252,7 @@ export async function createItem(input: {
 
     revalidatePath("/items");
     revalidatePath("/categories");
+    revalidatePath("/dashboard");
     return { ok: true, message: "Item created." };
   } catch (error) {
     if (
@@ -256,6 +275,9 @@ export async function updateItem(input: {
   quantity: number;
   unit: string;
   estimatedPrice: string;
+  actualPrice: string;
+  isBox: boolean;
+  boxPurpose: string;
   purchaseDate: string;
   notice: string;
   remarks: string;
@@ -270,6 +292,9 @@ export async function updateItem(input: {
     const desc = input.desc.trim();
     const unit = input.unit.trim() || "個";
     const estimatedPrice = input.estimatedPrice.trim();
+    const actualPrice = input.actualPrice.trim();
+    const isBox = Boolean(input.isBox);
+    const boxPurpose = isBox ? input.boxPurpose.trim() : "";
     const purchaseDate = input.purchaseDate.trim();
     const notice = input.notice.trim();
     const remarks = input.remarks.trim();
@@ -303,6 +328,9 @@ export async function updateItem(input: {
           quantity: Math.floor(input.quantity),
           unit,
           estimatedPrice,
+          actualPrice,
+          isBox,
+          boxPurpose,
           purchaseDate,
           notice,
           remarks,
@@ -321,6 +349,7 @@ export async function updateItem(input: {
     revalidatePath("/items");
     revalidatePath(`/items/${input.id}`);
     revalidatePath("/categories");
+    revalidatePath("/dashboard");
     return { ok: true, message: "Item updated." };
   } catch (error) {
     if (
@@ -346,6 +375,7 @@ export async function deleteItem(id: string): Promise<ItemActionResult> {
     }
 
     revalidatePath("/items");
+    revalidatePath("/dashboard");
     return { ok: true, message: "Item deleted." };
   } catch {
     return { ok: false, message: "Failed to delete item." };

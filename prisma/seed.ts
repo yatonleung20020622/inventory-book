@@ -96,6 +96,9 @@ type ItemSeed = {
   quantity: number;
   unit: string;
   estimatedPrice: string;
+  actualPrice?: string;
+  isBox?: boolean;
+  boxPurpose?: string;
   purchaseDate: string;
   notice: string;
   locationId: string;
@@ -196,6 +199,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "部",
       estimatedPrice: "12000 HKD",
+      actualPrice: "10800 HKD",
       purchaseDate: "2024-03-12",
       notice: "AppleCare+ until 2027",
       locationId: home.id,
@@ -214,6 +218,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "部",
       estimatedPrice: "4500 HKD",
+      actualPrice: "4200 HKD",
       purchaseDate: "2023-09-22",
       notice: "",
       locationId: home.id,
@@ -227,6 +232,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "副",
       estimatedPrice: "1200 HKD",
+      actualPrice: "980 HKD",
       purchaseDate: "2024-01-05",
       notice: "",
       locationId: home.id,
@@ -238,6 +244,22 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       },
     },
     {
+      name: "Cable & adapter box",
+      brand: "MUJI",
+      majorColor: "#F5F5F7",
+      desc: "Small storage box for desk cables.",
+      quantity: 1,
+      unit: "盒",
+      estimatedPrice: "60 HKD",
+      actualPrice: "49 HKD",
+      isBox: true,
+      boxPurpose: "USB-C cables, dongles, and spare chargers",
+      purchaseDate: "2024-08-01",
+      notice: "",
+      locationId: office.id,
+      categoryIds: [cat.Cables, cat.Misc],
+    },
+    {
       name: "USB-C 充電線 2m",
       brand: "Anker",
       majorColor: "#111111",
@@ -245,6 +267,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 2,
       unit: "條",
       estimatedPrice: "150 HKD",
+      actualPrice: "128 HKD",
       purchaseDate: "2025-06-01",
       notice: "",
       locationId: office.id,
@@ -258,6 +281,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "條",
       estimatedPrice: "220 HKD",
+      actualPrice: "199 HKD",
       purchaseDate: "2024-11-18",
       notice: "",
       locationId: office.id,
@@ -271,6 +295,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "部",
       estimatedPrice: "3200 HKD",
+      actualPrice: "2890 HKD",
       purchaseDate: "2023-05-30",
       notice: "Has slight backlight bleed at bottom",
       locationId: office.id,
@@ -302,6 +327,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "張",
       estimatedPrice: "800 HKD",
+      actualPrice: "599 HKD",
       purchaseDate: "2021-08-14",
       notice: "",
       locationId: home.id,
@@ -315,10 +341,27 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "張",
       estimatedPrice: "6500 HKD",
+      actualPrice: "5800 HKD",
       purchaseDate: "2022-02-20",
       notice: "",
       locationId: office.id,
       categoryIds: [cat.Furniture],
+    },
+    {
+      name: "Kitchen spare parts box",
+      brand: "IKEA",
+      majorColor: "#FFFFFF",
+      desc: "Clear plastic box under the sink.",
+      quantity: 1,
+      unit: "盒",
+      estimatedPrice: "40 HKD",
+      actualPrice: "29 HKD",
+      isBox: true,
+      boxPurpose: "Spare filters, brushes, and appliance manuals",
+      purchaseDate: "2023-06-15",
+      notice: "",
+      locationId: home.id,
+      categoryIds: [cat.Kitchen, cat.Misc],
     },
     {
       name: "空氣炸鍋",
@@ -328,6 +371,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "部",
       estimatedPrice: "900 HKD",
+      actualPrice: "750 HKD",
       purchaseDate: "2023-01-10",
       notice: "",
       locationId: home.id,
@@ -346,6 +390,7 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: 1,
       unit: "部",
       estimatedPrice: "2200 HKD",
+      actualPrice: "1800 HKD",
       purchaseDate: "2022-10-08",
       notice: "",
       locationId: home.id,
@@ -422,18 +467,19 @@ async function seedDemoInventory(userId: string, commenterId: string) {
       quantity: qty,
       unit: template.unit,
       estimatedPrice: `${price} HKD`,
+      actualPrice: `${Math.max(10, Math.floor(price * 0.85))} HKD`,
       purchaseDate: padDate(year, month, day),
       notice: n % 11 === 0 ? "Check before lending out" : "",
       locationId: locations[n % locations.length],
       categoryIds: [cat[template.category]],
       ...(n % 17 === 0
         ? {
-          forSale: {
-            salePrice: String(Math.max(20, Math.floor(price * 0.6))),
-            condition: n % 2 === 0 ? "Good" : "Fair",
-            note: "Seeded listing for Selling now",
-          },
-        }
+            forSale: {
+              salePrice: String(Math.max(20, Math.floor(price * 0.6))),
+              condition: n % 2 === 0 ? "Good" : "Fair",
+              note: "Seeded listing for Selling now",
+            },
+          }
         : {}),
     });
     n += 1;
@@ -452,6 +498,9 @@ async function seedDemoInventory(userId: string, commenterId: string) {
         quantity: seed.quantity,
         unit: seed.unit,
         estimatedPrice: seed.estimatedPrice,
+        actualPrice: seed.actualPrice ?? "",
+        isBox: Boolean(seed.isBox),
+        boxPurpose: seed.isBox ? (seed.boxPurpose ?? "") : "",
         purchaseDate: seed.purchaseDate,
         notice: seed.notice,
         remarks: SEED_MARK,
@@ -585,10 +634,12 @@ async function main() {
     return;
   }
 
-  if (existingSeedItems > 0 && reset) {
-    console.log("SEED_RESET=1 — clearing previous demo inventory…");
-    await clearDemoData(admin.id);
-  }
+  console.log(
+    reset
+      ? "SEED_RESET=1 — clearing previous demo inventory…"
+      : "Clearing any leftover demo inventory before seed…",
+  );
+  await clearDemoData(admin.id);
 
   const summary = await seedDemoInventory(admin.id, demoUser.id);
   console.log(

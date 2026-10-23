@@ -38,6 +38,9 @@ model Item {
   quantity       Int            @default(1)
   unit           String         @default("個")
   estimatedPrice String         @default("")
+  actualPrice    String         @default("")
+  isBox          Boolean        @default(false)
+  boxPurpose     String         @default("") @db.Text
   purchaseDate   String         @default("")
   notice         String         @default("") @db.Text
   remarks        String         @default("") @db.Text

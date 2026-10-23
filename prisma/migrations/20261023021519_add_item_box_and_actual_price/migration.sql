@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `Item` ADD COLUMN `actualPrice` VARCHAR(191) NOT NULL DEFAULT '',
+    ADD COLUMN `boxPurpose` TEXT NOT NULL DEFAULT '',
+    ADD COLUMN `isBox` BOOLEAN NOT NULL DEFAULT false;
