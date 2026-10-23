@@ -19,7 +19,10 @@ import Text from "antd/es/typography/Text";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { PageAboveCardProvider } from "@/components/page-above-card";
+import {
+  PageAboveCardProvider,
+  usePageCardless,
+} from "@/components/page-above-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const { Sider, Content, Header, Footer } = Layout;
@@ -210,6 +213,49 @@ function SideNav({
   );
 }
 
+function PageContentFrame({
+  isMobile,
+  children,
+}: {
+  isMobile: boolean;
+  children: ReactNode;
+}) {
+  const cardless = usePageCardless();
+
+  if (cardless) {
+    return (
+      <div
+        style={{
+          minHeight: "100%",
+          minWidth: 0,
+          maxWidth: "100%",
+          overflowX: "hidden",
+          color: "var(--foreground)",
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        background: "var(--card-bg)",
+        padding: isMobile ? 14 : 24,
+        borderRadius: 8,
+        minHeight: "100%",
+        minWidth: 0,
+        maxWidth: "100%",
+        overflowX: "hidden",
+        color: "var(--foreground)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function AppShell({
   email,
   username,
@@ -371,20 +417,9 @@ export function AppShell({
           }}
         >
           <PageAboveCardProvider>
-            <div
-              style={{
-                background: "var(--card-bg)",
-                padding: isMobile ? 14 : 24,
-                borderRadius: 8,
-                minHeight: "100%",
-                minWidth: 0,
-                maxWidth: "100%",
-                overflowX: "hidden",
-                color: "var(--foreground)",
-              }}
-            >
+            <PageContentFrame isMobile={Boolean(isMobile)}>
               {children}
-            </div>
+            </PageContentFrame>
           </PageAboveCardProvider>
         </Content>
         <Footer

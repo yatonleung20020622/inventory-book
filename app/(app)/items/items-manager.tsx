@@ -6,6 +6,7 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
+  SearchOutlined,
   UploadOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
@@ -33,6 +34,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { MajorColorSwatch } from "@/components/major-color-swatch";
+import { PageCardless } from "@/components/page-above-card";
 import { TableFrame } from "@/components/table-frame";
 import {
   createItem,
@@ -77,6 +79,65 @@ function uniqueBrands(items: ItemRecord[]): string[] {
   }
   return Array.from(brands).sort((a, b) =>
     a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+}
+
+const NO_LOCATION = "__none__";
+
+type ItemFilters = {
+  search: string;
+  locationId: string | null;
+  categoryId: string | null;
+  brand: string | null;
+};
+
+const emptyFilters: ItemFilters = {
+  search: "",
+  locationId: null,
+  categoryId: null,
+  brand: null,
+};
+
+function filterItems(items: ItemRecord[], filters: ItemFilters): ItemRecord[] {
+  const query = filters.search.trim().toLowerCase();
+
+  return items.filter((item) => {
+    if (query) {
+      const haystack = `${item.name} ${item.brand} ${item.desc}`.toLowerCase();
+      if (!haystack.includes(query)) {
+        return false;
+      }
+    }
+
+    if (filters.locationId === NO_LOCATION) {
+      if (item.locationId !== null) {
+        return false;
+      }
+    } else if (filters.locationId && item.locationId !== filters.locationId) {
+      return false;
+    }
+
+    if (
+      filters.categoryId &&
+      !item.categories.some((category) => category.id === filters.categoryId)
+    ) {
+      return false;
+    }
+
+    if (filters.brand && item.brand.trim() !== filters.brand) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function filtersActive(filters: ItemFilters) {
+  return (
+    filters.search.trim() !== "" ||
+    filters.locationId !== null ||
+    filters.categoryId !== null ||
+    filters.brand !== null
   );
 }
 
@@ -357,7 +418,27 @@ export function ItemsManager({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
   const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+  const [draftFilters, setDraftFilters] = useState<ItemFilters>(emptyFilters);
+  const [filters, setFilters] = useState<ItemFilters>(emptyFilters);
   const brandOptions = uniqueBrands(items);
+  const filteredItems = filterItems(items, filters);
+  const hasActiveFilters = filtersActive(filters);
+
+  function patchDraft(patch: Partial<ItemFilters>) {
+    setDraftFilters((current) => ({ ...current, ...patch }));
+  }
+
+  function applyFilters() {
+    setFilters(draftFilters);
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setDraftFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(1);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -453,52 +534,175 @@ export function ItemsManager({
     return false;
   }
 
+  const filterFieldStyle = {
+    flex: "1 1 200px",
+    minWidth: 180,
+    maxWidth: 280,
+    marginBottom: 16,
+  } as const;
+
+  const cardStyle = {
+    background: "var(--card-bg)",
+    border: "1px solid var(--border-color)",
+    borderRadius: 8,
+    color: "var(--foreground)",
+  } as const;
+
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>Items</h1>
-        <Space wrap>
-          <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
-            Download template
-          </Button>
-          <Upload
-            accept=".csv,text/csv"
-            showUploadList={false}
-            beforeUpload={onImportCsv}
+      <PageCardless />
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ ...cardStyle, padding: "20px 24px 4px" }}>
+          <Form
+            layout="horizontal"
+            onFinish={applyFilters}
+            requiredMark={false}
+            labelAlign="right"
+            labelCol={{ flex: "0 0 auto" }}
+            colon
           >
-            <Button icon={<UploadOutlined />} loading={pending}>
-              Import CSV
-            </Button>
-          </Upload>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Add item
-          </Button>
-        </Space>
-      </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0 24px",
+                alignItems: "flex-start",
+              }}
+            >
+              <Form.Item label="Search" style={filterFieldStyle}>
+                <Input
+                  allowClear
+                  placeholder="please enter"
+                  value={draftFilters.search}
+                  onChange={(event) =>
+                    patchDraft({ search: event.target.value })
+                  }
+                />
+              </Form.Item>
+              <Form.Item label="Location" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  placeholder="please select"
+                  value={draftFilters.locationId ?? undefined}
+                  onChange={(value) =>
+                    patchDraft({ locationId: value ?? null })
+                  }
+                  options={[
+                    { value: NO_LOCATION, label: "No location" },
+                    ...locations.map((location) => ({
+                      value: location.id,
+                      label: location.isExpired
+                        ? `${location.name} (expired)`
+                        : location.name,
+                    })),
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label="Category" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  placeholder="please select"
+                  value={draftFilters.categoryId ?? undefined}
+                  onChange={(value) =>
+                    patchDraft({ categoryId: value ?? null })
+                  }
+                  options={categories.map((category) => ({
+                    value: category.id,
+                    label: category.name,
+                  }))}
+                />
+              </Form.Item>
+              <Form.Item label="Brand" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  showSearch
+                  placeholder="please select"
+                  value={draftFilters.brand ?? undefined}
+                  onChange={(value) => patchDraft({ brand: value ?? null })}
+                  optionFilterProp="label"
+                  options={brandOptions.map((brand) => ({
+                    value: brand,
+                    label: brand,
+                  }))}
+                />
+              </Form.Item>
+              <div
+                style={{
+                  flex: "1 1 auto",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  marginBottom: 16,
+                  minWidth: 180,
+                }}
+              >
+                <Space wrap>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SearchOutlined />}
+                  >
+                    Search
+                  </Button>
+                  <Button htmlType="button" onClick={resetFilters}>
+                    Reset
+                  </Button>
+                </Space>
+              </div>
+            </div>
+          </Form>
+        </div>
 
-      <TableFrame>
-      <Table<ItemRecord>
-        rowKey="id"
-        dataSource={items}
-        loading={pending}
-        pagination={{
-          simple: true,
-          pageSize,
-          showSizeChanger: true,
-          pageSizeOptions: [10, 20, 50, 100],
-          onShowSizeChange: (_page, size) => setPageSize(size),
-        }}
-        scroll={{ x: 1360 }}
-        columns={[
+        <div style={{ ...cardStyle, padding: 24, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>Items</h1>
+            <Space wrap>
+              <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
+                Download template
+              </Button>
+              <Upload
+                accept=".csv,text/csv"
+                showUploadList={false}
+                beforeUpload={onImportCsv}
+              >
+                <Button icon={<UploadOutlined />} loading={pending}>
+                  Import CSV
+                </Button>
+              </Upload>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                Add item
+              </Button>
+            </Space>
+          </div>
+
+          <TableFrame>
+          <Table<ItemRecord>
+            rowKey="id"
+            dataSource={filteredItems}
+            loading={pending}
+            pagination={{
+              simple: true,
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              pageSizeOptions: [10, 20, 50, 100],
+              onChange: (nextPage) => setPage(nextPage),
+              onShowSizeChange: (_nextPage, size) => {
+                setPageSize(size);
+                setPage(1);
+              },
+            }}
+            scroll={{ x: 1360 }}
+            columns={[
           {
             title: "Name",
             dataIndex: "name",
@@ -643,9 +847,15 @@ export function ItemsManager({
             ),
           },
         ]}
-        locale={{ emptyText: "No items yet. Add your first item." }}
-      />
-      </TableFrame>
+            locale={{
+              emptyText: hasActiveFilters
+                ? "No items match these filters."
+                : "No items yet. Add your first item.",
+            }}
+          />
+          </TableFrame>
+        </div>
+      </div>
 
       <ItemFormModal
         open={open}
