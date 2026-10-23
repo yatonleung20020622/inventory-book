@@ -87,11 +87,14 @@ function uniqueBrands(items: ItemRecord[]): string[] {
 
 const NO_LOCATION = "__none__";
 
+type BoxFilter = "box" | "not_box";
+
 type ItemFilters = {
   search: string;
   locationId: string | null;
   categoryId: string | null;
   brand: string | null;
+  box: BoxFilter | null;
 };
 
 const emptyFilters: ItemFilters = {
@@ -99,6 +102,7 @@ const emptyFilters: ItemFilters = {
   locationId: null,
   categoryId: null,
   brand: null,
+  box: null,
 };
 
 function filterItems(items: ItemRecord[], filters: ItemFilters): ItemRecord[] {
@@ -106,7 +110,8 @@ function filterItems(items: ItemRecord[], filters: ItemFilters): ItemRecord[] {
 
   return items.filter((item) => {
     if (query) {
-      const haystack = `${item.name} ${item.brand} ${item.desc}`.toLowerCase();
+      const haystack =
+        `${item.name} ${item.brand} ${item.desc} ${item.boxPurpose}`.toLowerCase();
       if (!haystack.includes(query)) {
         return false;
       }
@@ -131,6 +136,13 @@ function filterItems(items: ItemRecord[], filters: ItemFilters): ItemRecord[] {
       return false;
     }
 
+    if (filters.box === "box" && !item.isBox) {
+      return false;
+    }
+    if (filters.box === "not_box" && item.isBox) {
+      return false;
+    }
+
     return true;
   });
 }
@@ -140,7 +152,8 @@ function filtersActive(filters: ItemFilters) {
     filters.search.trim() !== "" ||
     filters.locationId !== null ||
     filters.categoryId !== null ||
-    filters.brand !== null
+    filters.brand !== null ||
+    filters.box !== null
   );
 }
 
@@ -673,6 +686,20 @@ export function ItemsManager({
                     value: brand,
                     label: brand,
                   }))}
+                />
+              </Form.Item>
+              <Form.Item label="Box" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  placeholder="please select"
+                  value={draftFilters.box ?? undefined}
+                  onChange={(value) =>
+                    patchDraft({ box: (value as BoxFilter | null) ?? null })
+                  }
+                  options={[
+                    { value: "box", label: "Is a box" },
+                    { value: "not_box", label: "Not a box" },
+                  ]}
                 />
               </Form.Item>
               <div
