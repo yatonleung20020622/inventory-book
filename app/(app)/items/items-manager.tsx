@@ -20,7 +20,6 @@ import {
   Space,
   Table,
   Tag,
-  Tooltip,
   Upload,
 } from "antd";
 import Link from "next/link";
@@ -461,27 +460,26 @@ export function ItemsManager({
             render: (value: string, record) => (
               <Space size={6} wrap>
                 {record.notice.trim() ? (
-                  <Tooltip title={record.notice}>
-                    <span>
-                      <WarningOutlined
-                        style={{ color: "#faad14" }}
-                        aria-label="Has notice"
-                      />
-                    </span>
-                  </Tooltip>
+                  <span
+                    title={record.notice}
+                    style={{ display: "inline-flex", cursor: "help" }}
+                  >
+                    <WarningOutlined
+                      style={{ color: "#faad14" }}
+                      aria-label="Has notice"
+                    />
+                  </span>
                 ) : null}
                 <Link href={`/items/${record.id}`}>{value}</Link>
                 {record.isBox ? (
-                  <Tooltip title="This item is a box">
-                    <span>
-                      <Tag color="purple" style={{ marginInlineEnd: 0 }}>
-                        {record.boxPurpose.trim() || "Box"}
-                      </Tag>
-                    </span>
-                  </Tooltip>
+                  <span title="This item is a box" style={{ display: "inline-flex" }}>
+                    <Tag color="purple" style={{ marginInlineEnd: 0 }}>
+                      {record.boxPurpose.trim() || "Box"}
+                    </Tag>
+                  </span>
                 ) : null}
                 {record.onSale ? (
-                  <Tooltip
+                  <span
                     title={
                       isFreeSalePrice(record.salePrice)
                         ? "Sale price: Free"
@@ -489,13 +487,12 @@ export function ItemsManager({
                           ? `Sale price: ${record.salePrice}`
                           : "Posted for sale"
                     }
+                    style={{ display: "inline-flex" }}
                   >
-                    <span>
-                      <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                        On sale
-                      </Tag>
-                    </span>
-                  </Tooltip>
+                    <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                      On sale
+                    </Tag>
+                  </span>
                 ) : null}
               </Space>
             ),
