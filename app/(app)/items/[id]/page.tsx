@@ -4,9 +4,12 @@ import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { CategoryTag } from "@/components/category-tag";
 import { MajorColorSwatch } from "@/components/major-color-swatch";
 import { PageLoading } from "@/components/page-loading";
+import { listCategories } from "@/lib/actions/categories";
 import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
+import { listLocations } from "@/lib/actions/locations";
 import { AddItemToBox } from "./add-item-to-box";
+import { EditItemButton } from "./edit-item-button";
 import { ItemRelations } from "./item-relations";
 
 function DetailRow({
@@ -44,10 +47,12 @@ async function ItemDetails({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [item, relations, allItems] = await Promise.all([
+  const [item, relations, allItems, locations, categories] = await Promise.all([
     getItem(id),
     listItemRelations(id),
     listItems(),
+    listLocations(),
+    listCategories(),
   ]);
   if (!item) {
     notFound();
@@ -60,6 +65,27 @@ async function ItemDetails({
       name: entry.name,
       brand: entry.brand,
     }));
+
+  const brandOptions = Array.from(
+    new Set(
+      allItems
+        .map((entry) => entry.brand.trim())
+        .filter((brand) => brand.length > 0),
+    ),
+  ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+  const locationOptions = locations.map((location) => ({
+    id: location.id,
+    name: location.name,
+    isExpired: location.isExpired,
+    isDefault: location.isDefault,
+  }));
+
+  const categoryOptions = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    color: category.color,
+  }));
 
   return (
     <>
@@ -112,15 +138,32 @@ async function ItemDetails({
       <div className="item-detail-layout">
         <div
           style={{
+            position: "relative",
             width: "100%",
             minWidth: 0,
             boxSizing: "border-box",
             padding: "8px 16px",
+            paddingRight: 52,
             borderRadius: 8,
             background: "var(--card-bg)",
             border: "1px solid var(--border-color)",
           }}
         >
+          <div
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 1,
+            }}
+          >
+            <EditItemButton
+              item={item}
+              locations={locationOptions}
+              categories={categoryOptions}
+              brandOptions={brandOptions}
+            />
+          </div>
           <DetailRow label="Name" value={item.name} />
           <DetailRow label="Brand" value={item.brand || <EmptyValue />} />
           <DetailRow
