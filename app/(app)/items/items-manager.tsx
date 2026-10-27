@@ -418,7 +418,7 @@ export function ItemsManager({
                   }))}
                 />
               </Form.Item>
-              <Form.Item label="Box" style={filterFieldStyle}>
+              <Form.Item label="Container" style={filterFieldStyle}>
                 <Select
                   allowClear
                   placeholder="please select"
@@ -427,8 +427,8 @@ export function ItemsManager({
                     patchDraft({ box: (value as BoxFilter | null) ?? null })
                   }
                   options={[
-                    { value: "box", label: "Is a box" },
-                    { value: "not_box", label: "Not a box" },
+                    { value: "box", label: "Is a container" },
+                    { value: "not_box", label: "Not a container" },
                   ]}
                 />
               </Form.Item>
@@ -611,9 +611,12 @@ export function ItemsManager({
                       ) : null}
                       <Link href={`/items/${record.id}`}>{value}</Link>
                       {record.isBox ? (
-                        <span title="This item is a box" style={{ display: "inline-flex" }}>
+                        <span
+                          title="This item is a container (box, bag, case, etc.)"
+                          style={{ display: "inline-flex" }}
+                        >
                           <Tag color="purple" style={{ marginInlineEnd: 0 }}>
-                            {record.boxPurpose.trim() || "Box"}
+                            {record.boxPurpose.trim() || "Container"}
                           </Tag>
                         </span>
                       ) : null}

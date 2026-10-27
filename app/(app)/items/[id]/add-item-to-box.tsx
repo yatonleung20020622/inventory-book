@@ -101,10 +101,10 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
       }}
     >
       <h2 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 600 }}>
-        Add item to this box
+        Add item to this container
       </h2>
       <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 13 }}>
-        Creates a new item with relations: this box{" "}
+        Creates a new item with relations: this container{" "}
         <em>contains</em> it, and the item is <em>in</em>{" "}
         <strong style={{ color: "var(--foreground)" }}>{boxName}</strong>.
       </p>
@@ -144,10 +144,13 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
             },
           ]}
         >
-          <Input placeholder="Item inside the box" />
+          <Input placeholder="Item inside the container" />
         </Form.Item>
         <Form.Item label="Brand" name="brand">
           <Input placeholder="Optional" />
+        </Form.Item>
+        <Form.Item label="Desc" name="desc">
+          <Input.TextArea rows={2} placeholder="Optional" maxLength={500} />
         </Form.Item>
         <Form.Item
           label="Quantity"
@@ -163,16 +166,13 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
         >
           <Input placeholder="個" />
         </Form.Item>
-        <Form.Item label="Desc" name="desc">
-          <Input.TextArea rows={2} placeholder="Optional" maxLength={500} />
-        </Form.Item>
         <Button
           type="primary"
           htmlType="submit"
           icon={<PlusOutlined />}
           loading={pending}
         >
-          Create in box
+          Create in container
         </Button>
       </Form>
     </section>

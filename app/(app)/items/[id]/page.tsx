@@ -208,12 +208,12 @@ async function ItemDetails({
             value={item.actualPrice || <EmptyValue />}
           />
           <DetailRow
-            label="Is a box"
+            label="Is a container"
             value={item.isBox ? "Yes" : "No"}
           />
           {item.isBox ? (
             <DetailRow
-              label="Box is mainly for"
+              label="Mainly for"
               value={item.boxPurpose || <EmptyValue />}
             />
           ) : null}

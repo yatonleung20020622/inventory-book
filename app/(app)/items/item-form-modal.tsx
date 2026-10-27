@@ -286,12 +286,17 @@ export function ItemFormModal({
         <Form.Item label="Actual price" name="actualPrice">
           <Input placeholder="e.g. 100 HKD" />
         </Form.Item>
-        <Form.Item label="Is a box" name="isBox" valuePropName="checked">
+        <Form.Item
+          label="Is a container"
+          name="isBox"
+          valuePropName="checked"
+          extra="Box, bag, case, or anything that can hold other items"
+        >
           <Switch />
         </Form.Item>
         {isBox ? (
           <Form.Item
-            label="Box is mainly for"
+            label="Mainly for"
             name="boxPurpose"
             rules={[
               {
@@ -299,7 +304,7 @@ export function ItemFormModal({
                   value?.trim()
                     ? Promise.resolve()
                     : Promise.reject(
-                        new Error("Describe what this box is mainly for"),
+                        new Error("Describe what this container is mainly for"),
                       ),
               },
             ]}
