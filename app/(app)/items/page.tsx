@@ -7,7 +7,7 @@ import { ItemsManager } from "./items-manager";
 
 async function ItemsContent() {
   const [items, locations, categories] = await Promise.all([
-    listItems(),
+    listItems("active"),
     listLocations(),
     listCategories(),
   ]);

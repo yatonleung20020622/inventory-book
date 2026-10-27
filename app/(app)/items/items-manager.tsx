@@ -5,6 +5,7 @@ import {
   DownloadOutlined,
   EditOutlined,
   EyeOutlined,
+  MoreOutlined,
   PlusOutlined,
   SearchOutlined,
   UploadOutlined,
@@ -14,6 +15,7 @@ import {
   App,
   Button,
   Divider,
+  Dropdown,
   Form,
   Input,
   Pagination,
@@ -37,14 +39,23 @@ import {
   exportItemsCsv,
   importItemsFromCsv,
   previewItemCsvUpdates,
+  setItemDisposition,
   updateItem,
   type ItemCsvUpdatePreview,
   type ItemRecord,
 } from "@/lib/actions/items";
 import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import {
+  disposalTagLabel,
+  workingConditionLabel,
+} from "@/lib/item-disposition";
 import { isFreeSalePrice } from "@/lib/sale-price";
 import { ItemCsvUpdateModal } from "./item-csv-update-modal";
+import {
+  ItemDisposeModal,
+  type ItemDisposeFormValues,
+} from "./item-dispose-modal";
 import {
   ItemFormModal,
   type ItemFormCategoryOption,
@@ -140,6 +151,36 @@ function filtersActive(filters: ItemFilters) {
   );
 }
 
+function ItemStatusTags({ item }: { item: ItemRecord }) {
+  const disposal = disposalTagLabel(item.disposalStatus, item.disposalMethod);
+  const condition =
+    item.workingCondition === "not_working" ||
+    item.workingCondition === "broken"
+      ? workingConditionLabel(item.workingCondition)
+      : "";
+
+  return (
+    <>
+      {disposal ? (
+        <Tag
+          color={item.disposalStatus === "disposed" ? "default" : "orange"}
+          style={{ marginInlineEnd: 0 }}
+        >
+          {disposal}
+        </Tag>
+      ) : null}
+      {condition ? (
+        <Tag
+          color={item.workingCondition === "broken" ? "red" : "gold"}
+          style={{ marginInlineEnd: 0 }}
+        >
+          {condition}
+        </Tag>
+      ) : null}
+    </>
+  );
+}
+
 type ItemsManagerProps = {
   items: ItemRecord[];
   locations: LocationOption[];
@@ -157,6 +198,8 @@ export function ItemsManager({
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
+  const [disposeOpen, setDisposeOpen] = useState(false);
+  const [disposing, setDisposing] = useState<ItemRecord | null>(null);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState<ItemFilters>(emptyFilters);
@@ -203,6 +246,35 @@ export function ItemsManager({
   function closeModal() {
     setOpen(false);
     setEditing(null);
+  }
+
+  function openDispose(item: ItemRecord) {
+    setDisposing(item);
+    setDisposeOpen(true);
+  }
+
+  function closeDispose() {
+    setDisposeOpen(false);
+    setDisposing(null);
+  }
+
+  function onDisposeSubmit(values: ItemDisposeFormValues) {
+    if (!disposing) return;
+    startTransition(async () => {
+      const result = await setItemDisposition({
+        itemId: disposing.id,
+        workingCondition: values.workingCondition ?? "",
+        disposalStatus: values.disposalStatus ?? "",
+        disposalMethod: values.disposalMethod ?? "",
+      });
+      if (!result.ok) {
+        message.error(result.message);
+        return;
+      }
+      message.success(result.message);
+      closeDispose();
+      router.refresh();
+    });
   }
 
   function onSubmit(values: ItemFormValues) {
@@ -367,6 +439,54 @@ export function ItemsManager({
           onClick={() => openEdit(record)}
           aria-label="Edit item"
         />
+        <Dropdown
+          menu={{
+            items: [
+              {
+                key: "dispose",
+                label: record.disposalStatus ? "Edit disposal" : "Dispose",
+              },
+              ...(record.disposalStatus
+                ? [
+                    {
+                      key: "clear-disposal",
+                      label: "Clear disposal",
+                    },
+                  ]
+                : []),
+            ],
+            onClick: ({ key, domEvent }) => {
+              domEvent.stopPropagation();
+              if (key === "dispose") {
+                openDispose(record);
+                return;
+              }
+              if (key === "clear-disposal") {
+                startTransition(async () => {
+                  const result = await setItemDisposition({
+                    itemId: record.id,
+                    workingCondition: record.workingCondition,
+                    disposalStatus: "",
+                    disposalMethod: "",
+                  });
+                  if (!result.ok) {
+                    message.error(result.message);
+                    return;
+                  }
+                  message.success("Disposal cleared.");
+                  router.refresh();
+                });
+              }
+            },
+          }}
+          trigger={["click"]}
+        >
+          <Button
+            type="link"
+            icon={<MoreOutlined />}
+            aria-label="More actions"
+          />
+        </Dropdown>
         <Popconfirm
           title="Delete this item?"
           okText="Delete"
@@ -709,6 +829,7 @@ export function ItemsManager({
                               On sale
                             </Tag>
                           ) : null}
+                          <ItemStatusTags item={record} />
                         </Space>
                         <div
                           style={{
@@ -848,6 +969,7 @@ export function ItemsManager({
                             </Tag>
                           </span>
                         ) : null}
+                        <ItemStatusTags item={record} />
                       </Space>
                     ),
                   },
@@ -939,7 +1061,7 @@ export function ItemsManager({
                   {
                     title: "Actions",
                     key: "actions",
-                    width: 120,
+                    width: 148,
                     fixed: "right",
                     render: (_, record) => renderItemActions(record),
                   },
@@ -960,6 +1082,14 @@ export function ItemsManager({
         brandOptions={brandOptions}
         onCancel={closeModal}
         onSubmit={onSubmit}
+      />
+
+      <ItemDisposeModal
+        open={disposeOpen}
+        item={disposing}
+        pending={pending}
+        onCancel={closeDispose}
+        onSubmit={onDisposeSubmit}
       />
 
       <ItemCsvUpdateModal

@@ -8,6 +8,12 @@ import { listCategories } from "@/lib/actions/categories";
 import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
 import { listLocations } from "@/lib/actions/locations";
+import {
+  disposalMethodLabel,
+  disposalStatusLabel,
+  disposalTagLabel,
+  workingConditionLabel,
+} from "@/lib/item-disposition";
 import { AddItemToBox } from "./add-item-to-box";
 import { DuplicateItemButton } from "./duplicate-item-button";
 import { EditItemButton } from "./edit-item-button";
@@ -51,7 +57,7 @@ async function ItemDetails({
   const [item, relations, allItems, locations, categories] = await Promise.all([
     getItem(id),
     listItemRelations(id),
-    listItems(),
+    listItems("all"),
     listLocations(),
     listCategories(),
   ]);
@@ -215,6 +221,33 @@ async function ItemDetails({
             <DetailRow
               label="Mainly for"
               value={item.boxPurpose || <EmptyValue />}
+            />
+          ) : null}
+          <DetailRow
+            label="Working condition"
+            value={
+              workingConditionLabel(item.workingCondition) || <EmptyValue />
+            }
+          />
+          <DetailRow
+            label="Disposal status"
+            value={
+              disposalTagLabel(item.disposalStatus, item.disposalMethod) ||
+              disposalStatusLabel(item.disposalStatus) || <EmptyValue />
+            }
+          />
+          {item.disposalStatus ? (
+            <DetailRow
+              label="Disposal method"
+              value={
+                disposalMethodLabel(item.disposalMethod) || <EmptyValue />
+              }
+            />
+          ) : null}
+          {item.disposalStatus === "disposed" ? (
+            <DetailRow
+              label="Disposed on"
+              value={item.disposedAt || <EmptyValue />}
             />
           ) : null}
           <DetailRow

@@ -3,6 +3,7 @@
 import {
   AppstoreOutlined,
   DashboardOutlined,
+  DeleteOutlined,
   EnvironmentOutlined,
   HistoryOutlined,
   LogoutOutlined,
@@ -57,6 +58,11 @@ const baseNavItems = [
     key: "/items",
     icon: <AppstoreOutlined />,
     label: "Items",
+  },
+  {
+    key: "/disposal",
+    icon: <DeleteOutlined />,
+    label: "Disposal",
   },
   {
     key: "/locations",

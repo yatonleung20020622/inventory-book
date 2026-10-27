@@ -63,7 +63,17 @@ async function InventoryValueStats() {
   }
 
   const items = await prisma.item.findMany({
-    where: { userId },
+    where: {
+      userId,
+      OR: [
+        { disposition: null },
+        {
+          disposition: {
+            disposalStatus: { notIn: ["to_dispose", "disposed"] },
+          },
+        },
+      ],
+    },
     select: {
       estimatedPrice: true,
       actualPrice: true,

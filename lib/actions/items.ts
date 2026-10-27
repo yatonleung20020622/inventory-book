@@ -12,6 +12,19 @@ import {
   rowsToItemUpdateCsv,
   type ItemUpdateCsvRow,
 } from "@/lib/csv/items-csv";
+import {
+  dispositionIsEmpty,
+  emptyDispositionFields,
+  normalizeDisposalMethod,
+  normalizeDisposalStatus,
+  normalizeWorkingCondition,
+  resolveDispositionFields,
+  type DisposalMethod,
+  type DisposalStatus,
+  type ItemDispositionFields,
+  type ItemDispositionInput,
+  type WorkingCondition,
+} from "@/lib/item-disposition";
 import { prisma } from "@/lib/prisma";
 
 export type ItemCategorySummary = {
@@ -19,6 +32,13 @@ export type ItemCategorySummary = {
   name: string;
   color: string;
 };
+
+export type ItemListFilter =
+  | "active"
+  | "to_dispose"
+  | "disposed"
+  | "disposal"
+  | "all";
 
 export type ItemRecord = {
   id: string;
@@ -40,6 +60,10 @@ export type ItemRecord = {
   categories: ItemCategorySummary[];
   onSale: boolean;
   salePrice: string | null;
+  workingCondition: WorkingCondition;
+  disposalStatus: DisposalStatus;
+  disposalMethod: DisposalMethod;
+  disposedAt: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -95,6 +119,13 @@ export type PreviewItemCsvUpdatesResult = {
   errors?: string[];
 };
 
+type DispositionRow = {
+  workingCondition: string;
+  disposalStatus: string;
+  disposalMethod: string;
+  disposedAt: string;
+} | null;
+
 type ItemRow = {
   id: string;
   name: string;
@@ -114,6 +145,7 @@ type ItemRow = {
   location: { name: string } | null;
   categories?: { category: { id: string; name: string; color: string } }[];
   saleListings?: { id: string; salePrice: string }[];
+  disposition?: DispositionRow;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -178,8 +210,21 @@ async function resolveOwnedCategoryIds(
   return categories.map((category) => category.id);
 }
 
+function dispositionFromRow(row: DispositionRow): ItemDispositionFields {
+  if (!row) {
+    return emptyDispositionFields();
+  }
+  return {
+    workingCondition: normalizeWorkingCondition(row.workingCondition),
+    disposalStatus: normalizeDisposalStatus(row.disposalStatus),
+    disposalMethod: normalizeDisposalMethod(row.disposalMethod),
+    disposedAt: row.disposedAt.trim(),
+  };
+}
+
 function toItemRecord(item: ItemRow): ItemRecord {
   const listing = item.saleListings?.[0];
+  const disposition = dispositionFromRow(item.disposition ?? null);
   return {
     id: item.id,
     name: item.name,
@@ -204,6 +249,10 @@ function toItemRecord(item: ItemRow): ItemRecord {
     })),
     onSale: Boolean(listing),
     salePrice: listing?.salePrice ?? null,
+    workingCondition: disposition.workingCondition,
+    disposalStatus: disposition.disposalStatus,
+    disposalMethod: disposition.disposalMethod,
+    disposedAt: disposition.disposedAt,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
@@ -227,12 +276,97 @@ const itemInclude = {
     select: { id: true, salePrice: true },
     take: 1,
   },
+  disposition: {
+    select: {
+      workingCondition: true,
+      disposalStatus: true,
+      disposalMethod: true,
+      disposedAt: true,
+    },
+  },
 } as const;
 
-export async function listItems(): Promise<ItemRecord[]> {
+function listItemsWhere(userId: string, filter: ItemListFilter) {
+  if (filter === "all") {
+    return { userId };
+  }
+  if (filter === "to_dispose") {
+    return {
+      userId,
+      disposition: { disposalStatus: "to_dispose" },
+    };
+  }
+  if (filter === "disposed") {
+    return {
+      userId,
+      disposition: { disposalStatus: "disposed" },
+    };
+  }
+  if (filter === "disposal") {
+    return {
+      userId,
+      disposition: {
+        disposalStatus: { in: ["to_dispose", "disposed"] },
+      },
+    };
+  }
+  // active: hide anything marked for disposal or already disposed
+  return {
+    userId,
+    OR: [
+      { disposition: null },
+      {
+        disposition: {
+          disposalStatus: { notIn: ["to_dispose", "disposed"] },
+        },
+      },
+    ],
+  };
+}
+
+async function syncItemDisposition(
+  itemId: string,
+  userId: string,
+  input: ItemDispositionInput,
+  previousDisposedAt = "",
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const resolved = resolveDispositionFields(input, previousDisposedAt);
+  if (!resolved.ok) {
+    return resolved;
+  }
+
+  if (dispositionIsEmpty(resolved.fields)) {
+    await prisma.itemDisposition.deleteMany({ where: { itemId, userId } });
+    return { ok: true };
+  }
+
+  await prisma.itemDisposition.upsert({
+    where: { itemId },
+    create: {
+      itemId,
+      userId,
+      workingCondition: resolved.fields.workingCondition,
+      disposalStatus: resolved.fields.disposalStatus,
+      disposalMethod: resolved.fields.disposalMethod,
+      disposedAt: resolved.fields.disposedAt,
+    },
+    update: {
+      workingCondition: resolved.fields.workingCondition,
+      disposalStatus: resolved.fields.disposalStatus,
+      disposalMethod: resolved.fields.disposalMethod,
+      disposedAt: resolved.fields.disposedAt,
+    },
+  });
+
+  return { ok: true };
+}
+
+export async function listItems(
+  filter: ItemListFilter = "active",
+): Promise<ItemRecord[]> {
   const userId = await requireUserId();
   const items = await prisma.item.findMany({
-    where: { userId },
+    where: listItemsWhere(userId, filter),
     include: itemInclude,
     orderBy: { createdAt: "desc" },
   });
@@ -290,7 +424,7 @@ export async function createItem(input: {
       return { ok: false, message: "Quantity must be zero or greater." };
     }
 
-    await prisma.item.create({
+    const created = await prisma.item.create({
       data: {
         name,
         brand,
@@ -311,12 +445,14 @@ export async function createItem(input: {
           create: categoryIds.map((categoryId) => ({ categoryId })),
         },
       },
+      select: { id: true },
     });
 
     revalidatePath("/items");
+    revalidatePath(`/items/${created.id}`);
     revalidatePath("/categories");
     revalidatePath("/dashboard");
-    return { ok: true, message: "Item created." };
+    return { ok: true, message: "Item created.", itemId: created.id };
   } catch (error) {
     if (
       error instanceof Error &&
@@ -326,6 +462,51 @@ export async function createItem(input: {
       return { ok: false, message: error.message };
     }
     return { ok: false, message: "Failed to create item." };
+  }
+}
+
+/** Set or clear disposal / working-condition on an item (separate from create/edit form). */
+export async function setItemDisposition(input: {
+  itemId: string;
+  workingCondition?: string;
+  disposalStatus?: string;
+  disposalMethod?: string;
+}): Promise<ItemActionResult> {
+  try {
+    const userId = await requireUserId();
+    const existing = await prisma.item.findFirst({
+      where: { id: input.itemId, userId },
+      select: {
+        id: true,
+        disposition: { select: { disposedAt: true } },
+      },
+    });
+
+    if (!existing) {
+      return { ok: false, message: "Item not found." };
+    }
+
+    const synced = await syncItemDisposition(
+      input.itemId,
+      userId,
+      {
+        workingCondition: input.workingCondition,
+        disposalStatus: input.disposalStatus,
+        disposalMethod: input.disposalMethod,
+      },
+      existing.disposition?.disposedAt ?? "",
+    );
+    if (!synced.ok) {
+      return synced;
+    }
+
+    revalidatePath("/items");
+    revalidatePath("/disposal");
+    revalidatePath(`/items/${input.itemId}`);
+    revalidatePath("/dashboard");
+    return { ok: true, message: "Disposal updated." };
+  } catch {
+    return { ok: false, message: "Failed to update disposal." };
   }
 }
 
@@ -661,7 +842,7 @@ export async function deleteItem(id: string): Promise<ItemActionResult> {
   }
 }
 
-/** Shallow-copy an item (fields + categories). Does not copy relations, sales, or box contents. */
+/** Shallow-copy an item (fields + categories + disposition). Does not copy relations, sales, or box contents. */
 export async function duplicateItem(id: string): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -669,12 +850,22 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
       where: { id, userId },
       include: {
         categories: { select: { categoryId: true } },
+        disposition: {
+          select: {
+            workingCondition: true,
+            disposalStatus: true,
+            disposalMethod: true,
+            disposedAt: true,
+          },
+        },
       },
     });
 
     if (!source) {
       return { ok: false, message: "Item not found." };
     }
+
+    const disposition = dispositionFromRow(source.disposition);
 
     const created = await prisma.item.create({
       data: {
@@ -698,6 +889,19 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
             categoryId: category.categoryId,
           })),
         },
+        ...(!dispositionIsEmpty(disposition)
+          ? {
+              disposition: {
+                create: {
+                  userId,
+                  workingCondition: disposition.workingCondition,
+                  disposalStatus: disposition.disposalStatus,
+                  disposalMethod: disposition.disposalMethod,
+                  disposedAt: disposition.disposedAt,
+                },
+              },
+            }
+          : {}),
       },
       select: { id: true },
     });
@@ -821,7 +1025,7 @@ export async function exportItemsCsv(): Promise<
   { ok: true; csv: string } | { ok: false; message: string }
 > {
   try {
-    const items = await listItems();
+    const items = await listItems("all");
     const csv = buildItemsExportCsv(items);
     return { ok: true, csv };
   } catch {

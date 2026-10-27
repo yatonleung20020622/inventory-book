@@ -28,6 +28,7 @@ model User {
   saleComments        SaleListingComment[]
   itemRelations       ItemRelation[]
   itemLocationChanges ItemLocationChange[]
+  itemDispositions    ItemDisposition[]
 }
 
 model Item {
@@ -54,11 +55,30 @@ model Item {
   relationsTo         ItemRelation[]      @relation("ItemRelationsTo")
   categories          ItemCategory[]
   locationChanges     ItemLocationChange[]
+  disposition         ItemDisposition?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
   @@index([userId])
   @@index([locationId])
+}
+
+model ItemDisposition {
+  id               String   @id @default(cuid())
+  itemId           String   @unique
+  item             Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workingCondition String   @default("") @map("working_condition")
+  disposalStatus   String   @default("") @map("disposal_status")
+  disposalMethod   String   @default("") @map("disposal_method")
+  disposedAt       String   @default("") @map("disposed_at")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([disposalStatus])
+  @@map("item_dispositions")
 }
 
 model ItemLocationChange {
