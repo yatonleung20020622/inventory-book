@@ -12,6 +12,7 @@ export type LocationRecord = {
   lon: string;
   isExpired: boolean;
   isDefault: boolean;
+  itemCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,6 +32,7 @@ type LocationRow = {
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
+  _count: { items: number };
 };
 
 async function requireUserId() {
@@ -50,6 +52,7 @@ function toLocationRecord(location: LocationRow): LocationRecord {
     lon: location.lon,
     isExpired: location.isExpired,
     isDefault: location.isDefault,
+    itemCount: location._count.items,
     createdAt: location.createdAt.toISOString(),
     updatedAt: location.updatedAt.toISOString(),
   };
@@ -70,6 +73,7 @@ export async function listLocations(): Promise<LocationRecord[]> {
   const userId = await requireUserId();
   const locations = await prisma.location.findMany({
     where: { userId },
+    include: { _count: { select: { items: true } } },
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
   return locations.map(toLocationRecord);
@@ -138,9 +142,34 @@ export async function updateLocation(input: {
     const lat = input.lat.trim();
     const lon = input.lon.trim();
     const isDefault = Boolean(input.isDefault);
+    const isExpired = Boolean(input.isExpired);
 
     if (!name) {
       return { ok: false, message: "Location name is required." };
+    }
+
+    const existing = await prisma.location.findFirst({
+      where: { id: input.id, userId },
+      select: { id: true, isExpired: true },
+    });
+
+    if (!existing) {
+      return { ok: false, message: "Location not found." };
+    }
+
+    if (isExpired && !existing.isExpired) {
+      const itemCount = await prisma.item.count({
+        where: { locationId: input.id, userId },
+      });
+      if (itemCount > 0) {
+        return {
+          ok: false,
+          message:
+            itemCount === 1
+              ? "Cannot mark as expired while 1 item is still at this location."
+              : `Cannot mark as expired while ${itemCount} items are still at this location.`,
+        };
+      }
     }
 
     if (isDefault) {
@@ -154,7 +183,7 @@ export async function updateLocation(input: {
         address,
         lat,
         lon,
-        isExpired: Boolean(input.isExpired),
+        isExpired,
         isDefault,
       },
     });

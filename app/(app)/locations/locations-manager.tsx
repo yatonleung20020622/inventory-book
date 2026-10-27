@@ -74,6 +74,17 @@ function LocationFormModal({
   onSubmit: (values: LocationFormValues) => void;
 }) {
   const [form] = Form.useForm<LocationFormValues>();
+  const isExpiredChecked = Form.useWatch("isExpired", form);
+  const itemCount = editing?.itemCount ?? 0;
+  // Can turn expired off anytime; can turn it on only when no items belong here.
+  const expireDisabled =
+    Boolean(editing) && itemCount > 0 && !Boolean(isExpiredChecked);
+  const expiredExtra =
+    editing && itemCount > 0
+      ? itemCount === 1
+        ? "Move or reassign the 1 item at this location before marking it expired."
+        : `Move or reassign the ${itemCount} items at this location before marking it expired.`
+      : "Only locations with no items can be marked expired.";
 
   useEffect(() => {
     if (!open) return;
@@ -137,8 +148,13 @@ function LocationFormModal({
         <Form.Item label="Longitude" name="lon">
           <Input placeholder="e.g. 114.1694" />
         </Form.Item>
-        <Form.Item label="Expired" name="isExpired" valuePropName="checked">
-          <Switch />
+        <Form.Item
+          label="Expired"
+          name="isExpired"
+          valuePropName="checked"
+          extra={expiredExtra}
+        >
+          <Switch disabled={expireDisabled} />
         </Form.Item>
         <Form.Item
           label="Default location"
