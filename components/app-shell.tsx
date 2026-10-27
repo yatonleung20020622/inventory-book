@@ -4,6 +4,7 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   EnvironmentOutlined,
+  HistoryOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -61,6 +62,11 @@ const baseNavItems = [
     key: "/locations",
     icon: <EnvironmentOutlined />,
     label: "Locations",
+  },
+  {
+    key: "/location-history",
+    icon: <HistoryOutlined />,
+    label: "Location history",
   },
   {
     key: "/categories",

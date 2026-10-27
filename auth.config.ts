@@ -38,6 +38,7 @@ export const authConfig = {
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/items") ||
         pathname.startsWith("/locations") ||
+        pathname.startsWith("/location-history") ||
         pathname.startsWith("/categories") ||
         pathname.startsWith("/sales") ||
         pathname.startsWith("/profile") ||
