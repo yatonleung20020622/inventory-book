@@ -296,20 +296,7 @@ export function ItemFormModal({
           <Switch />
         </Form.Item>
         {isBox ? (
-          <Form.Item
-            label="Mainly for"
-            name="boxPurpose"
-            rules={[
-              {
-                validator: (_, value: string) =>
-                  value?.trim()
-                    ? Promise.resolve()
-                    : Promise.reject(
-                        new Error("Describe what this container is mainly for"),
-                      ),
-              },
-            ]}
-          >
+          <Form.Item label="Mainly for" name="boxPurpose">
             <Input.TextArea
               rows={2}
               placeholder="e.g. Charging cables and adapters"
