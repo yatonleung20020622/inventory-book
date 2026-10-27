@@ -1,6 +1,6 @@
 "use client";
 
-import { Form, Modal, Select } from "antd";
+import { Form, Input, Modal, Select } from "antd";
 import { useEffect } from "react";
 import type { ItemRecord } from "@/lib/actions/items";
 import type {
@@ -13,6 +13,7 @@ export type ItemDisposeFormValues = {
   workingCondition: WorkingCondition;
   disposalStatus: DisposalStatus;
   disposalMethod: DisposalMethod;
+  soldPrice: string;
 };
 
 type ItemDisposeModalProps = {
@@ -32,6 +33,10 @@ export function ItemDisposeModal({
 }: ItemDisposeModalProps) {
   const [form] = Form.useForm<ItemDisposeFormValues>();
   const disposalStatus = Form.useWatch("disposalStatus", form);
+  const disposalMethod = Form.useWatch("disposalMethod", form);
+  const showSoldPrice = disposalMethod === "sell";
+  const soldPriceRequired =
+    disposalMethod === "sell" && disposalStatus === "disposed";
 
   useEffect(() => {
     if (!open || !item) return;
@@ -39,6 +44,7 @@ export function ItemDisposeModal({
       workingCondition: item.workingCondition || undefined,
       disposalStatus: item.disposalStatus || "to_dispose",
       disposalMethod: item.disposalMethod || undefined,
+      soldPrice: item.soldPrice || undefined,
     });
   }, [open, item, form]);
 
@@ -78,7 +84,7 @@ export function ItemDisposeModal({
           label="Disposal status"
           name="disposalStatus"
           rules={[{ required: true, message: "Choose a disposal status" }]}
-          extra="To dispose = decided; Disposed = already thrown away."
+          extra="To dispose = decided; Disposed = already gone."
         >
           <Select
             options={[
@@ -95,8 +101,33 @@ export function ItemDisposeModal({
               options={[
                 { value: "recycle", label: "Recycle" },
                 { value: "rubbish", label: "Rubbish" },
+                { value: "sell", label: "2nd platform" },
+                { value: "gift", label: "Friends gift" },
               ]}
+              onChange={(value) => {
+                if (value !== "sell") {
+                  form.setFieldValue("soldPrice", undefined);
+                }
+              }}
             />
+          </Form.Item>
+        ) : null}
+        {showSoldPrice ? (
+          <Form.Item
+            label="Sold price"
+            name="soldPrice"
+            rules={
+              soldPriceRequired
+                ? [{ required: true, message: "Enter the sold price" }]
+                : undefined
+            }
+            extra={
+              soldPriceRequired
+                ? "Required once the item is sold."
+                : "Optional until sold; fill in when it sells."
+            }
+          >
+            <Input allowClear placeholder="e.g. 200" inputMode="decimal" />
           </Form.Item>
         ) : null}
       </Form>

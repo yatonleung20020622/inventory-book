@@ -149,6 +149,7 @@ export function DisposalManager({ items }: DisposalManagerProps) {
         workingCondition: values.workingCondition ?? "",
         disposalStatus: values.disposalStatus ?? "",
         disposalMethod: values.disposalMethod ?? "",
+        soldPrice: values.soldPrice ?? "",
       });
       if (!result.ok) {
         message.error(result.message);
@@ -179,6 +180,7 @@ export function DisposalManager({ items }: DisposalManagerProps) {
         workingCondition: record.workingCondition,
         disposalStatus: "",
         disposalMethod: "",
+        soldPrice: "",
       });
       if (!result.ok) {
         message.error(result.message);
@@ -319,6 +321,8 @@ export function DisposalManager({ items }: DisposalManagerProps) {
                   options={[
                     { value: "recycle", label: "Recycle" },
                     { value: "rubbish", label: "Rubbish" },
+                    { value: "sell", label: "2nd platform" },
+                    { value: "gift", label: "Friends gift" },
                   ]}
                 />
               </Form.Item>
@@ -419,6 +423,9 @@ export function DisposalManager({ items }: DisposalManagerProps) {
                         </div>
                         <div style={mobileRecordMetaStyle}>
                           <span>{record.locationName || "No location"}</span>
+                          {record.soldPrice ? (
+                            <span>Sold {record.soldPrice}</span>
+                          ) : null}
                           {record.disposedAt ? (
                             <span>Disposed {record.disposedAt}</span>
                           ) : null}
@@ -491,6 +498,13 @@ export function DisposalManager({ items }: DisposalManagerProps) {
                     dataIndex: "locationName",
                     width: 140,
                     render: (value: string | null) => value || "—",
+                  },
+                  {
+                    title: "Sold price",
+                    dataIndex: "soldPrice",
+                    width: 110,
+                    render: (value: string) =>
+                      value ? value : <span style={{ opacity: 0.45 }}>—</span>,
                   },
                   {
                     title: "Disposed on",

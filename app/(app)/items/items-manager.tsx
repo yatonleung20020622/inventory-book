@@ -266,6 +266,7 @@ export function ItemsManager({
         workingCondition: values.workingCondition ?? "",
         disposalStatus: values.disposalStatus ?? "",
         disposalMethod: values.disposalMethod ?? "",
+        soldPrice: values.soldPrice ?? "",
       });
       if (!result.ok) {
         message.error(result.message);
@@ -468,6 +469,7 @@ export function ItemsManager({
                     workingCondition: record.workingCondition,
                     disposalStatus: "",
                     disposalMethod: "",
+                    soldPrice: "",
                   });
                   if (!result.ok) {
                     message.error(result.message);

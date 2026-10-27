@@ -244,6 +244,12 @@ async function ItemDetails({
               }
             />
           ) : null}
+          {item.disposalMethod === "sell" ? (
+            <DetailRow
+              label="Sold price"
+              value={item.soldPrice || <EmptyValue />}
+            />
+          ) : null}
           {item.disposalStatus === "disposed" ? (
             <DetailRow
               label="Disposed on"

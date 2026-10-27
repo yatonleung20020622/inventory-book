@@ -4,19 +4,26 @@ export type WorkingCondition = (typeof WORKING_CONDITIONS)[number] | "";
 export const DISPOSAL_STATUSES = ["to_dispose", "disposed"] as const;
 export type DisposalStatus = (typeof DISPOSAL_STATUSES)[number] | "";
 
-export const DISPOSAL_METHODS = ["recycle", "rubbish"] as const;
+export const DISPOSAL_METHODS = [
+  "recycle",
+  "rubbish",
+  "sell",
+  "gift",
+] as const;
 export type DisposalMethod = (typeof DISPOSAL_METHODS)[number] | "";
 
 export type ItemDispositionInput = {
   workingCondition?: string | null;
   disposalStatus?: string | null;
   disposalMethod?: string | null;
+  soldPrice?: string | null;
 };
 
 export type ItemDispositionFields = {
   workingCondition: WorkingCondition;
   disposalStatus: DisposalStatus;
   disposalMethod: DisposalMethod;
+  soldPrice: string;
   disposedAt: string;
 };
 
@@ -50,6 +57,7 @@ export function emptyDispositionFields(): ItemDispositionFields {
     workingCondition: "",
     disposalStatus: "",
     disposalMethod: "",
+    soldPrice: "",
     disposedAt: "",
   };
 }
@@ -62,9 +70,21 @@ export function resolveDispositionFields(
   const workingCondition = normalizeWorkingCondition(input.workingCondition);
   const disposalStatus = normalizeDisposalStatus(input.disposalStatus);
   let disposalMethod = normalizeDisposalMethod(input.disposalMethod);
+  let soldPrice = (input.soldPrice ?? "").trim();
 
   if (!disposalStatus) {
     disposalMethod = "";
+  }
+
+  if (disposalMethod !== "sell") {
+    soldPrice = "";
+  }
+
+  if (disposalMethod === "sell" && disposalStatus === "disposed" && !soldPrice) {
+    return {
+      ok: false,
+      message: "Sold price is required when sold on a 2nd platform.",
+    };
   }
 
   const disposedAt =
@@ -78,6 +98,7 @@ export function resolveDispositionFields(
       workingCondition,
       disposalStatus,
       disposalMethod,
+      soldPrice,
       disposedAt,
     },
   };
@@ -88,6 +109,7 @@ export function dispositionIsEmpty(fields: ItemDispositionFields) {
     !fields.workingCondition &&
     !fields.disposalStatus &&
     !fields.disposalMethod &&
+    !fields.soldPrice &&
     !fields.disposedAt
   );
 }
@@ -122,6 +144,10 @@ export function disposalMethodLabel(value: DisposalMethod) {
       return "Recycle";
     case "rubbish":
       return "Rubbish";
+    case "sell":
+      return "2nd platform";
+    case "gift":
+      return "Friends gift";
     default:
       return "";
   }
@@ -134,11 +160,15 @@ export function disposalTagLabel(
   if (status === "to_dispose") {
     if (method === "recycle") return "To recycle";
     if (method === "rubbish") return "To rubbish";
+    if (method === "sell") return "To sell";
+    if (method === "gift") return "To gift";
     return "To dispose";
   }
   if (status === "disposed") {
     if (method === "recycle") return "Recycled";
     if (method === "rubbish") return "Thrown away";
+    if (method === "sell") return "Sold";
+    if (method === "gift") return "Gifted";
     return "Disposed";
   }
   return "";

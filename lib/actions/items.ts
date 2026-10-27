@@ -63,6 +63,7 @@ export type ItemRecord = {
   workingCondition: WorkingCondition;
   disposalStatus: DisposalStatus;
   disposalMethod: DisposalMethod;
+  soldPrice: string;
   disposedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -123,6 +124,7 @@ type DispositionRow = {
   workingCondition: string;
   disposalStatus: string;
   disposalMethod: string;
+  soldPrice: string;
   disposedAt: string;
 } | null;
 
@@ -218,6 +220,7 @@ function dispositionFromRow(row: DispositionRow): ItemDispositionFields {
     workingCondition: normalizeWorkingCondition(row.workingCondition),
     disposalStatus: normalizeDisposalStatus(row.disposalStatus),
     disposalMethod: normalizeDisposalMethod(row.disposalMethod),
+    soldPrice: row.soldPrice.trim(),
     disposedAt: row.disposedAt.trim(),
   };
 }
@@ -252,6 +255,7 @@ function toItemRecord(item: ItemRow): ItemRecord {
     workingCondition: disposition.workingCondition,
     disposalStatus: disposition.disposalStatus,
     disposalMethod: disposition.disposalMethod,
+    soldPrice: disposition.soldPrice,
     disposedAt: disposition.disposedAt,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
@@ -281,6 +285,7 @@ const itemInclude = {
       workingCondition: true,
       disposalStatus: true,
       disposalMethod: true,
+      soldPrice: true,
       disposedAt: true,
     },
   },
@@ -348,12 +353,14 @@ async function syncItemDisposition(
       workingCondition: resolved.fields.workingCondition,
       disposalStatus: resolved.fields.disposalStatus,
       disposalMethod: resolved.fields.disposalMethod,
+      soldPrice: resolved.fields.soldPrice,
       disposedAt: resolved.fields.disposedAt,
     },
     update: {
       workingCondition: resolved.fields.workingCondition,
       disposalStatus: resolved.fields.disposalStatus,
       disposalMethod: resolved.fields.disposalMethod,
+      soldPrice: resolved.fields.soldPrice,
       disposedAt: resolved.fields.disposedAt,
     },
   });
@@ -471,6 +478,7 @@ export async function setItemDisposition(input: {
   workingCondition?: string;
   disposalStatus?: string;
   disposalMethod?: string;
+  soldPrice?: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -493,6 +501,7 @@ export async function setItemDisposition(input: {
         workingCondition: input.workingCondition,
         disposalStatus: input.disposalStatus,
         disposalMethod: input.disposalMethod,
+        soldPrice: input.soldPrice,
       },
       existing.disposition?.disposedAt ?? "",
     );
@@ -855,6 +864,7 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
             workingCondition: true,
             disposalStatus: true,
             disposalMethod: true,
+            soldPrice: true,
             disposedAt: true,
           },
         },
@@ -897,6 +907,7 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
                   workingCondition: disposition.workingCondition,
                   disposalStatus: disposition.disposalStatus,
                   disposalMethod: disposition.disposalMethod,
+                  soldPrice: disposition.soldPrice,
                   disposedAt: disposition.disposedAt,
                 },
               },

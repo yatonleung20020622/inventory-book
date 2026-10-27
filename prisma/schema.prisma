@@ -72,6 +72,7 @@ model ItemDisposition {
   workingCondition String   @default("") @map("working_condition")
   disposalStatus   String   @default("") @map("disposal_status")
   disposalMethod   String   @default("") @map("disposal_method")
+  soldPrice        String   @default("") @map("sold_price")
   disposedAt       String   @default("") @map("disposed_at")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
