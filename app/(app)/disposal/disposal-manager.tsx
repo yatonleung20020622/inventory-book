@@ -4,13 +4,16 @@ import {
   DeleteOutlined,
   EyeOutlined,
   MoreOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   App,
   Button,
   Dropdown,
+  Form,
   Pagination,
   Popconfirm,
+  Select,
   Space,
   Table,
   Tag,
@@ -24,6 +27,7 @@ import {
   mobileRecordCardStyle,
   mobileRecordMetaStyle,
 } from "@/components/mobile-record-list";
+import { PageCardless } from "@/components/page-above-card";
 import { TableFrame } from "@/components/table-frame";
 import {
   deleteItem,
@@ -33,6 +37,8 @@ import {
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
   disposalTagLabel,
+  type DisposalMethod,
+  type DisposalStatus,
   workingConditionLabel,
 } from "@/lib/item-disposition";
 import {
@@ -44,6 +50,35 @@ type DisposalManagerProps = {
   items: ItemRecord[];
 };
 
+type StatusFilter = DisposalStatus | null;
+type MethodFilter = DisposalMethod | null;
+
+type DisposalFilters = {
+  status: StatusFilter;
+  method: MethodFilter;
+};
+
+const emptyFilters: DisposalFilters = {
+  status: null,
+  method: null,
+};
+
+function filtersActive(filters: DisposalFilters) {
+  return filters.status !== null || filters.method !== null;
+}
+
+function filterItems(items: ItemRecord[], filters: DisposalFilters) {
+  return items.filter((item) => {
+    if (filters.status && item.disposalStatus !== filters.status) {
+      return false;
+    }
+    if (filters.method && item.disposalMethod !== filters.method) {
+      return false;
+    }
+    return true;
+  });
+}
+
 export function DisposalManager({ items }: DisposalManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
@@ -51,9 +86,50 @@ export function DisposalManager({ items }: DisposalManagerProps) {
   const [pending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [draftFilters, setDraftFilters] =
+    useState<DisposalFilters>(emptyFilters);
+  const [filters, setFilters] = useState<DisposalFilters>(emptyFilters);
   const [disposeOpen, setDisposeOpen] = useState(false);
   const [disposing, setDisposing] = useState<ItemRecord | null>(null);
-  const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
+
+  const filteredItems = filterItems(items, filters);
+  const hasActiveFilters = filtersActive(filters);
+  const pageItems = filteredItems.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+  const emptyText = hasActiveFilters
+    ? "No disposal items match these filters."
+    : "No disposal items yet.";
+
+  const filterFieldStyle = {
+    flex: isMobile ? "1 1 100%" : "1 1 200px",
+    minWidth: isMobile ? 0 : 180,
+    maxWidth: isMobile ? "100%" : 280,
+    marginBottom: 16,
+  } as const;
+
+  const cardStyle = {
+    background: "var(--card-bg)",
+    border: "1px solid var(--border-color)",
+    borderRadius: 8,
+    color: "var(--foreground)",
+  } as const;
+
+  function patchDraft(patch: Partial<DisposalFilters>) {
+    setDraftFilters((current) => ({ ...current, ...patch }));
+  }
+
+  function applyFilters() {
+    setFilters(draftFilters);
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setDraftFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(1);
+  }
 
   function openDispose(item: ItemRecord) {
     setDisposing(item);
@@ -122,7 +198,9 @@ export function DisposalManager({ items }: DisposalManagerProps) {
     return (
       <Space size={4} wrap>
         {disposal ? (
-          <Tag color={record.disposalStatus === "disposed" ? "default" : "orange"}>
+          <Tag
+            color={record.disposalStatus === "disposed" ? "default" : "orange"}
+          >
             {disposal}
           </Tag>
         ) : null}
@@ -188,139 +266,251 @@ export function DisposalManager({ items }: DisposalManagerProps) {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1
-            style={{ margin: 0, fontSize: isMobile ? 20 : 24, fontWeight: 600 }}
+      <PageCardless />
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          style={{
+            ...cardStyle,
+            padding: isMobile ? "16px 14px 4px" : "20px 24px 4px",
+          }}
+        >
+          <Form
+            layout="horizontal"
+            onFinish={applyFilters}
+            requiredMark={false}
+            labelAlign="right"
+            labelCol={{ flex: "0 0 auto" }}
+            colon
           >
-            Disposal
-          </h1>
-          <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: 13 }}>
-            Items marked to dispose or already thrown away ({items.length}).
-          </p>
-        </div>
-      </div>
-
-      {isMobile ? (
-        items.length === 0 ? (
-          <MobileEmpty>No disposal items yet.</MobileEmpty>
-        ) : (
-          <MobileRecordList>
-            {pageItems.map((record) => (
-              <div key={record.id} style={mobileRecordCardStyle}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <Link
-                      href={`/items/${record.id}`}
-                      style={{
-                        display: "block",
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "inherit",
-                        marginBottom: 8,
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {record.name}
-                    </Link>
-                    <div style={{ marginBottom: 8 }}>{statusTags(record)}</div>
-                    <div style={mobileRecordMetaStyle}>
-                      <span>{record.locationName || "No location"}</span>
-                      {record.disposedAt ? (
-                        <span>Disposed {record.disposedAt}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  {renderActions(record)}
-                </div>
-              </div>
-            ))}
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                marginTop: 4,
+                flexWrap: "wrap",
+                gap: "0 24px",
+                alignItems: "flex-start",
               }}
             >
-              <Pagination
-                simple
-                current={page}
-                pageSize={pageSize}
-                total={items.length}
-                showSizeChanger
-                pageSizeOptions={[10, 20, 50, 100]}
-                onChange={(nextPage, nextSize) => {
-                  if (nextSize && nextSize !== pageSize) {
-                    setPageSize(nextSize);
-                    setPage(1);
-                    return;
+              <Form.Item label="Status" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  placeholder="please select"
+                  value={draftFilters.status ?? undefined}
+                  onChange={(value) =>
+                    patchDraft({
+                      status: (value as StatusFilter | undefined) ?? null,
+                    })
                   }
-                  setPage(nextPage);
+                  options={[
+                    { value: "to_dispose", label: "To dispose" },
+                    { value: "disposed", label: "Disposed" },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label="Method" style={filterFieldStyle}>
+                <Select
+                  allowClear
+                  placeholder="please select"
+                  value={draftFilters.method ?? undefined}
+                  onChange={(value) =>
+                    patchDraft({
+                      method: (value as MethodFilter | undefined) ?? null,
+                    })
+                  }
+                  options={[
+                    { value: "recycle", label: "Recycle" },
+                    { value: "rubbish", label: "Rubbish" },
+                  ]}
+                />
+              </Form.Item>
+              <div
+                style={{
+                  flex: "1 1 auto",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  marginBottom: 16,
+                  minWidth: 180,
                 }}
-              />
+              >
+                <Space wrap>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SearchOutlined />}
+                  >
+                    Search
+                  </Button>
+                  <Button htmlType="button" onClick={resetFilters}>
+                    Reset
+                  </Button>
+                </Space>
+              </div>
             </div>
-          </MobileRecordList>
-        )
-      ) : (
-        <TableFrame>
-          <Table<ItemRecord>
-            rowKey="id"
-            dataSource={items}
-            loading={pending}
-            pagination={{ pageSize: 10, simple: true }}
-            scroll={{ x: 720 }}
-            locale={{ emptyText: "No disposal items yet." }}
-            columns={[
-              {
-                title: "Name",
-                dataIndex: "name",
-                ellipsis: true,
-                render: (value: string, record) => (
-                  <Space size={6} wrap>
-                    <Link href={`/items/${record.id}`}>{value}</Link>
-                    {statusTags(record)}
-                  </Space>
-                ),
-              },
-              {
-                title: "Location",
-                dataIndex: "locationName",
-                width: 140,
-                render: (value: string | null) => value || "—",
-              },
-              {
-                title: "Disposed on",
-                dataIndex: "disposedAt",
-                width: 120,
-                render: (value: string) =>
-                  value ? value : <span style={{ opacity: 0.45 }}>—</span>,
-              },
-              {
-                title: "Actions",
-                key: "actions",
-                width: 120,
-                render: (_, record) => renderActions(record),
-              },
-            ]}
-          />
-        </TableFrame>
-      )}
+          </Form>
+        </div>
+
+        <div
+          style={{
+            ...cardStyle,
+            padding: isMobile ? 14 : 24,
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: 16,
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 10,
+                minWidth: 0,
+              }}
+            >
+              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
+                Disposal
+              </h1>
+              <span style={{ color: "var(--muted)", fontSize: 14 }}>
+                {hasActiveFilters
+                  ? `${filteredItems.length} of ${items.length}`
+                  : `${items.length} total`}
+              </span>
+            </div>
+          </div>
+
+          {isMobile ? (
+            filteredItems.length === 0 ? (
+              <MobileEmpty>{emptyText}</MobileEmpty>
+            ) : (
+              <MobileRecordList>
+                {pageItems.map((record) => (
+                  <div key={record.id} style={mobileRecordCardStyle}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <Link
+                          href={`/items/${record.id}`}
+                          style={{
+                            display: "block",
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "inherit",
+                            marginBottom: 8,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {record.name}
+                        </Link>
+                        <div style={{ marginBottom: 8 }}>
+                          {statusTags(record)}
+                        </div>
+                        <div style={mobileRecordMetaStyle}>
+                          <span>{record.locationName || "No location"}</span>
+                          {record.disposedAt ? (
+                            <span>Disposed {record.disposedAt}</span>
+                          ) : null}
+                        </div>
+                      </div>
+                      {renderActions(record)}
+                    </div>
+                  </div>
+                ))}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: 4,
+                  }}
+                >
+                  <Pagination
+                    simple
+                    current={page}
+                    pageSize={pageSize}
+                    total={filteredItems.length}
+                    showSizeChanger
+                    pageSizeOptions={[10, 20, 50, 100]}
+                    onChange={(nextPage, nextSize) => {
+                      if (nextSize && nextSize !== pageSize) {
+                        setPageSize(nextSize);
+                        setPage(1);
+                        return;
+                      }
+                      setPage(nextPage);
+                    }}
+                  />
+                </div>
+              </MobileRecordList>
+            )
+          ) : (
+            <TableFrame>
+              <Table<ItemRecord>
+                rowKey="id"
+                dataSource={filteredItems}
+                loading={pending}
+                pagination={{
+                  simple: true,
+                  current: page,
+                  pageSize,
+                  showSizeChanger: true,
+                  pageSizeOptions: [10, 20, 50, 100],
+                  onChange: (nextPage) => setPage(nextPage),
+                  onShowSizeChange: (_nextPage, size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  },
+                }}
+                scroll={{ x: 720 }}
+                locale={{ emptyText }}
+                columns={[
+                  {
+                    title: "Name",
+                    dataIndex: "name",
+                    ellipsis: true,
+                    render: (value: string, record) => (
+                      <Space size={6} wrap>
+                        <Link href={`/items/${record.id}`}>{value}</Link>
+                        {statusTags(record)}
+                      </Space>
+                    ),
+                  },
+                  {
+                    title: "Location",
+                    dataIndex: "locationName",
+                    width: 140,
+                    render: (value: string | null) => value || "—",
+                  },
+                  {
+                    title: "Disposed on",
+                    dataIndex: "disposedAt",
+                    width: 120,
+                    render: (value: string) =>
+                      value ? value : <span style={{ opacity: 0.45 }}>—</span>,
+                  },
+                  {
+                    title: "Actions",
+                    key: "actions",
+                    width: 120,
+                    render: (_, record) => renderActions(record),
+                  },
+                ]}
+              />
+            </TableFrame>
+          )}
+        </div>
+      </div>
 
       <ItemDisposeModal
         open={disposeOpen}
