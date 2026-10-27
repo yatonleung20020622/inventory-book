@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { BOX_CONTAINS_TYPE, BOX_IN_TYPE } from "@/lib/box-relation";
+import { parseBoxItemsCsv } from "@/lib/csv/box-items-csv";
 import {
   buildItemsExportCsv,
   parseCsv,
@@ -11,7 +12,6 @@ import {
   rowsToItemUpdateCsv,
   type ItemUpdateCsvRow,
 } from "@/lib/csv/items-csv";
-import { parseBoxItemsExcel } from "@/lib/excel/box-items-excel";
 import { prisma } from "@/lib/prisma";
 
 export type ItemCategorySummary = {
@@ -411,10 +411,10 @@ export async function createItemInBox(input: {
   }
 }
 
-/** Bulk-create items inside a box from an Excel (.xlsx) upload. */
-export async function importItemsIntoBoxFromExcel(input: {
+/** Bulk-create items inside a box from a CSV upload. */
+export async function importItemsIntoBoxFromCsv(input: {
   boxId: string;
-  fileBase64: string;
+  csvText: string;
 }): Promise<ImportItemsResult> {
   try {
     const userId = await requireUserId();
@@ -427,13 +427,7 @@ export async function importItemsIntoBoxFromExcel(input: {
       return { ok: false, message: "Box not found." };
     }
 
-    const binary = Buffer.from(input.fileBase64, "base64");
-    const parsed = parseBoxItemsExcel(
-      binary.buffer.slice(
-        binary.byteOffset,
-        binary.byteOffset + binary.byteLength,
-      ),
-    );
+    const parsed = parseBoxItemsCsv(input.csvText);
     if (!parsed.ok) {
       return { ok: false, message: parsed.message };
     }
@@ -526,7 +520,7 @@ export async function importItemsIntoBoxFromExcel(input: {
       errors: errors.slice(0, 10),
     };
   } catch {
-    return { ok: false, message: "Failed to import Excel." };
+    return { ok: false, message: "Failed to import CSV." };
   }
 }
 

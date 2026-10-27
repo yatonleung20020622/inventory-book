@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import {
   createItemInBox,
-  importItemsIntoBoxFromExcel,
+  importItemsIntoBoxFromCsv,
 } from "@/lib/actions/items";
-import { buildBoxItemsExcelTemplate } from "@/lib/excel/box-items-excel";
+import { buildBoxItemsCsvTemplate } from "@/lib/csv/box-items-csv";
 
 type FormValues = {
   name: string;
@@ -23,23 +23,6 @@ type AddItemToBoxProps = {
   boxName: string;
 };
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("Failed to read file."));
-        return;
-      }
-      const comma = result.indexOf(",");
-      resolve(comma >= 0 ? result.slice(comma + 1) : result);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
-    reader.readAsDataURL(file);
-  });
-}
-
 export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
   const { message } = App.useApp();
   const router = useRouter();
@@ -47,23 +30,21 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
   const [form] = Form.useForm<FormValues>();
 
   function downloadTemplate() {
-    const bytes = buildBoxItemsExcelTemplate();
-    const blob = new Blob([Uint8Array.from(bytes)], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+    const csv = buildBoxItemsCsvTemplate();
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "box-items-template.xlsx";
+    anchor.download = "box-items-template.csv";
     anchor.click();
     URL.revokeObjectURL(url);
   }
 
-  function onImportExcel(file: File) {
+  function onImportCsv(file: File) {
     startTransition(async () => {
       try {
-        const fileBase64 = await fileToBase64(file);
-        const result = await importItemsIntoBoxFromExcel({ boxId, fileBase64 });
+        const csvText = await file.text();
+        const result = await importItemsIntoBoxFromCsv({ boxId, csvText });
         if (!result.ok) {
           message.error(result.message);
           if (result.errors?.length) {
@@ -77,7 +58,7 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
         }
         router.refresh();
       } catch {
-        message.error("Failed to import Excel.");
+        message.error("Failed to read CSV file.");
       }
     });
     return false;
@@ -130,15 +111,15 @@ export function AddItemToBox({ boxId, boxName }: AddItemToBoxProps) {
 
       <Space wrap style={{ marginBottom: 16 }}>
         <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
-          Excel template
+          Download template
         </Button>
         <Upload
-          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          accept=".csv,text/csv"
           showUploadList={false}
-          beforeUpload={onImportExcel}
+          beforeUpload={onImportCsv}
         >
           <Button icon={<UploadOutlined />} loading={pending}>
-            Import Excel
+            Import CSV
           </Button>
         </Upload>
       </Space>
