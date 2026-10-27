@@ -126,24 +126,32 @@ async function requireUserId() {
   return session.user.id;
 }
 
-async function resolveOwnedLocationId(
+async function resolveOwnedLocation(
   userId: string,
   locationId: string | null | undefined,
-) {
+): Promise<{ id: string; name: string } | null> {
   if (!locationId) {
     return null;
   }
 
   const location = await prisma.location.findFirst({
     where: { id: locationId, userId },
-    select: { id: true },
+    select: { id: true, name: true },
   });
 
   if (!location) {
     throw new Error("Invalid location.");
   }
 
-  return location.id;
+  return location;
+}
+
+async function resolveOwnedLocationId(
+  userId: string,
+  locationId: string | null | undefined,
+) {
+  const location = await resolveOwnedLocation(userId, locationId);
+  return location?.id ?? null;
 }
 
 async function resolveOwnedCategoryIds(
@@ -554,7 +562,8 @@ export async function updateItem(input: {
     const purchaseDate = input.purchaseDate.trim();
     const notice = input.notice.trim();
     const remarks = input.remarks.trim();
-    const locationId = await resolveOwnedLocationId(userId, input.locationId);
+    const nextLocation = await resolveOwnedLocation(userId, input.locationId);
+    const locationId = nextLocation?.id ?? null;
     const categoryIds = await resolveOwnedCategoryIds(userId, input.categoryIds);
 
     if (!name) {
@@ -566,14 +575,34 @@ export async function updateItem(input: {
 
     const existing = await prisma.item.findFirst({
       where: { id: input.id, userId },
-      select: { id: true },
+      select: {
+        id: true,
+        locationId: true,
+        location: { select: { name: true } },
+      },
     });
 
     if (!existing) {
       return { ok: false, message: "Item not found." };
     }
 
+    const locationChanged = existing.locationId !== locationId;
+
     await prisma.$transaction([
+      ...(locationChanged
+        ? [
+            prisma.itemLocationChange.create({
+              data: {
+                itemId: input.id,
+                userId,
+                fromLocationId: existing.locationId,
+                toLocationId: locationId,
+                fromLocationName: existing.location?.name ?? "",
+                toLocationName: nextLocation?.name ?? "",
+              },
+            }),
+          ]
+        : []),
       prisma.item.update({
         where: { id: input.id },
         data: {

@@ -21,12 +21,13 @@ model User {
   role            Role                 @default(USER)
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
-  items           Item[]
-  locations       Location[]
-  categories      Category[]
-  saleListings    SaleListing[]
-  saleComments    SaleListingComment[]
-  itemRelations   ItemRelation[]
+  items               Item[]
+  locations           Location[]
+  categories          Category[]
+  saleListings        SaleListing[]
+  saleComments        SaleListingComment[]
+  itemRelations       ItemRelation[]
+  itemLocationChanges ItemLocationChange[]
 }
 
 model Item {
@@ -48,15 +49,33 @@ model Item {
   location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
   userId         String
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  saleListings   SaleListing[]
-  relationsFrom  ItemRelation[] @relation("ItemRelationsFrom")
-  relationsTo    ItemRelation[] @relation("ItemRelationsTo")
-  categories     ItemCategory[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  saleListings        SaleListing[]
+  relationsFrom       ItemRelation[]      @relation("ItemRelationsFrom")
+  relationsTo         ItemRelation[]      @relation("ItemRelationsTo")
+  categories          ItemCategory[]
+  locationChanges     ItemLocationChange[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   @@index([userId])
   @@index([locationId])
+}
+
+model ItemLocationChange {
+  id               String   @id @default(cuid())
+  itemId           String
+  item             Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromLocationId   String?
+  toLocationId     String?
+  fromLocationName String   @default("")
+  toLocationName   String   @default("")
+  createdAt        DateTime @default(now())
+
+  @@index([itemId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Category {
