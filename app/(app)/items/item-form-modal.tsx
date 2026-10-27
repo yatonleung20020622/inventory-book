@@ -190,6 +190,7 @@ export function ItemFormModal({
       confirmLoading={pending}
       okText={editing ? "Save" : "Create"}
       destroyOnHidden
+      width="min(520px, calc(100vw - 24px))"
       styles={{
         body: {
           maxHeight: "min(60vh, 480px)",

@@ -11,7 +11,6 @@ import {
   Checkbox,
   DatePicker,
   Form,
-  Grid,
   Input,
   InputNumber,
   Modal,
@@ -36,12 +35,11 @@ import {
   type SaleCondition,
   type SaleListingRecord,
 } from "@/lib/actions/sales";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
   formatSalePriceDisplay,
   isFreeSalePrice,
 } from "@/lib/sale-price";
-
-const { useBreakpoint } = Grid;
 
 type ItemSource = "existing" | "new";
 
@@ -86,8 +84,7 @@ export function MyListingsManager({
 }: MyListingsManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SaleListingRecord | null>(null);

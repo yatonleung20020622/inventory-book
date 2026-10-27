@@ -1,12 +1,11 @@
 "use client";
 
-import { Grid, Table } from "antd";
+import { Table } from "antd";
 import Link from "next/link";
 import { TableFrame } from "@/components/table-frame";
 import type { SaleListingRecord } from "@/lib/actions/sales";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { formatSalePriceDisplay } from "@/lib/sale-price";
-
-const { useBreakpoint } = Grid;
 
 function formatDate(iso: string) {
   // Stable SSR/client format (avoid toLocaleDateString hydration mismatch).
@@ -88,8 +87,7 @@ export function SellingNowTable({
 }: {
   listings: SaleListingRecord[];
 }) {
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const isMobile = useIsMobile();
 
   if (isMobile) {
     return <SellingNowCards listings={listings} />;

@@ -11,6 +11,7 @@ import {
   Form,
   Input,
   Modal,
+  Pagination,
   Popconfirm,
   Select,
   Space,
@@ -19,6 +20,12 @@ import {
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import {
+  MobileEmpty,
+  MobileRecordList,
+  mobileRecordCardStyle,
+  mobileRecordMetaStyle,
+} from "@/components/mobile-record-list";
 import { TableFrame } from "@/components/table-frame";
 import {
   createUser,
@@ -26,6 +33,7 @@ import {
   updateUser,
   type AdminUserRecord,
 } from "@/lib/actions/admin-users";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 type UserFormValues = {
   email: string;
@@ -47,10 +55,14 @@ function formatDate(iso: string) {
 export function UsersManager({ users, currentUserId }: UsersManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AdminUserRecord | null>(null);
   const [form] = Form.useForm<UserFormValues>();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageItems = users.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => {
     if (!open) return;
@@ -130,6 +142,36 @@ export function UsersManager({ users, currentUserId }: UsersManagerProps) {
     });
   }
 
+  function renderActions(record: AdminUserRecord) {
+    const isSelf = record.id === currentUserId;
+    return (
+      <Space size={0}>
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => openEdit(record)}
+          aria-label="Edit user"
+        />
+        <Popconfirm
+          title="Delete this user?"
+          description="Their items, locations, and posts will be removed."
+          okText="Delete"
+          cancelText="Cancel"
+          disabled={isSelf}
+          onConfirm={() => onDelete(record.id)}
+        >
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            disabled={isSelf}
+            aria-label="Delete user"
+          />
+        </Popconfirm>
+      </Space>
+    );
+  }
+
   return (
     <>
       <div
@@ -139,91 +181,148 @@ export function UsersManager({ users, currentUserId }: UsersManagerProps) {
           marginBottom: 16,
         }}
       >
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openCreate}
+          block={isMobile}
+        >
           Add user
         </Button>
       </div>
 
-      <TableFrame>
-      <Table<AdminUserRecord>
-        rowKey="id"
-        dataSource={users}
-        loading={pending}
-        pagination={{ pageSize: 10, simple: true }}
-        scroll={{ x: 720 }}
-        columns={[
-          {
-            title: "Username",
-            dataIndex: "username",
-            render: (value: string) =>
-              value ? value : <span style={{ opacity: 0.45 }}>—</span>,
-          },
-          {
-            title: "Email",
-            dataIndex: "email",
-            ellipsis: true,
-          },
-          {
-            title: "Phone",
-            dataIndex: "phone",
-            width: 120,
-            render: (value: string) =>
-              value ? value : <span style={{ opacity: 0.45 }}>—</span>,
-          },
-          {
-            title: "Role",
-            dataIndex: "role",
-            width: 100,
-            render: (value: "USER" | "ADMIN") => (
-              <Tag color={value === "ADMIN" ? "blue" : "default"}>
-                {value === "ADMIN" ? "Admin" : "User"}
-              </Tag>
-            ),
-          },
-          {
-            title: "Created",
-            dataIndex: "createdAt",
-            width: 120,
-            render: (value: string) => formatDate(value),
-          },
-          {
-            title: "Actions",
-            key: "actions",
-            width: 96,
-            render: (_, record) => {
-              const isSelf = record.id === currentUserId;
-              return (
-                <Space size={0}>
-                  <Button
-                    type="link"
-                    icon={<EditOutlined />}
-                    onClick={() => openEdit(record)}
-                    aria-label="Edit user"
-                  />
-                  <Popconfirm
-                    title="Delete this user?"
-                    description="Their items, locations, and posts will be removed."
-                    okText="Delete"
-                    cancelText="Cancel"
-                    disabled={isSelf}
-                    onConfirm={() => onDelete(record.id)}
-                  >
-                    <Button
-                      type="link"
-                      danger
-                      icon={<DeleteOutlined />}
-                      disabled={isSelf}
-                      aria-label="Delete user"
-                    />
-                  </Popconfirm>
-                </Space>
-              );
-            },
-          },
-        ]}
-        locale={{ emptyText: "No users yet." }}
-      />
-      </TableFrame>
+      {isMobile ? (
+        users.length === 0 ? (
+          <MobileEmpty>No users yet.</MobileEmpty>
+        ) : (
+          <MobileRecordList>
+            {pageItems.map((record) => (
+              <div key={record.id} style={mobileRecordCardStyle}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {record.username || "—"}
+                      </span>
+                      <Tag
+                        color={record.role === "ADMIN" ? "blue" : "default"}
+                      >
+                        {record.role === "ADMIN" ? "Admin" : "User"}
+                      </Tag>
+                    </div>
+                    <div style={mobileRecordMetaStyle}>
+                      <span style={{ wordBreak: "break-word" }}>
+                        {record.email}
+                      </span>
+                      {record.phone ? <span>{record.phone}</span> : null}
+                      <span>{formatDate(record.createdAt)}</span>
+                    </div>
+                  </div>
+                  {renderActions(record)}
+                </div>
+              </div>
+            ))}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 4,
+              }}
+            >
+              <Pagination
+                simple
+                current={page}
+                pageSize={pageSize}
+                total={users.length}
+                showSizeChanger
+                pageSizeOptions={[10, 20, 50, 100]}
+                onChange={(nextPage, nextSize) => {
+                  if (nextSize && nextSize !== pageSize) {
+                    setPageSize(nextSize);
+                    setPage(1);
+                    return;
+                  }
+                  setPage(nextPage);
+                }}
+              />
+            </div>
+          </MobileRecordList>
+        )
+      ) : (
+        <TableFrame>
+          <Table<AdminUserRecord>
+            rowKey="id"
+            dataSource={users}
+            loading={pending}
+            pagination={{ pageSize: 10, simple: true }}
+            scroll={{ x: 720 }}
+            columns={[
+              {
+                title: "Username",
+                dataIndex: "username",
+                render: (value: string) =>
+                  value ? value : <span style={{ opacity: 0.45 }}>—</span>,
+              },
+              {
+                title: "Email",
+                dataIndex: "email",
+                ellipsis: true,
+              },
+              {
+                title: "Phone",
+                dataIndex: "phone",
+                width: 120,
+                render: (value: string) =>
+                  value ? value : <span style={{ opacity: 0.45 }}>—</span>,
+              },
+              {
+                title: "Role",
+                dataIndex: "role",
+                width: 100,
+                render: (value: "USER" | "ADMIN") => (
+                  <Tag color={value === "ADMIN" ? "blue" : "default"}>
+                    {value === "ADMIN" ? "Admin" : "User"}
+                  </Tag>
+                ),
+              },
+              {
+                title: "Created",
+                dataIndex: "createdAt",
+                width: 120,
+                render: (value: string) => formatDate(value),
+              },
+              {
+                title: "Actions",
+                key: "actions",
+                width: 96,
+                render: (_, record) => renderActions(record),
+              },
+            ]}
+            locale={{ emptyText: "No users yet." }}
+          />
+        </TableFrame>
+      )}
 
       <Modal
         title={editing ? "Edit user" : "Add user"}

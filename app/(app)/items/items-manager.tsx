@@ -16,6 +16,7 @@ import {
   Divider,
   Form,
   Input,
+  Pagination,
   Popconfirm,
   Select,
   Space,
@@ -41,6 +42,7 @@ import {
   type ItemRecord,
 } from "@/lib/actions/items";
 import { buildItemCsvTemplate } from "@/lib/csv/items-csv";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { isFreeSalePrice } from "@/lib/sale-price";
 import { ItemCsvUpdateModal } from "./item-csv-update-modal";
 import {
@@ -151,6 +153,7 @@ export function ItemsManager({
 }: ItemsManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRecord | null>(null);
@@ -167,6 +170,10 @@ export function ItemsManager({
   const brandOptions = uniqueBrands(items);
   const filteredItems = filterItems(items, filters);
   const hasActiveFilters = filtersActive(filters);
+  const pageItems = filteredItems.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   function patchDraft(patch: Partial<ItemFilters>) {
     setDraftFilters((current) => ({ ...current, ...patch }));
@@ -327,9 +334,9 @@ export function ItemsManager({
   }
 
   const filterFieldStyle = {
-    flex: "1 1 200px",
-    minWidth: 180,
-    maxWidth: 280,
+    flex: isMobile ? "1 1 100%" : "1 1 200px",
+    minWidth: isMobile ? 0 : 180,
+    maxWidth: isMobile ? "100%" : 280,
     marginBottom: 16,
   } as const;
 
@@ -340,11 +347,53 @@ export function ItemsManager({
     color: "var(--foreground)",
   } as const;
 
+  const emptyText = hasActiveFilters
+    ? "No items match these filters."
+    : "No items yet. Add your first item.";
+
+  function renderItemActions(record: ItemRecord) {
+    return (
+      <Space size={0}>
+        <Link href={`/items/${record.id}`}>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            aria-label="View item"
+          />
+        </Link>
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => openEdit(record)}
+          aria-label="Edit item"
+        />
+        <Popconfirm
+          title="Delete this item?"
+          okText="Delete"
+          cancelText="Cancel"
+          onConfirm={() => onDelete(record.id)}
+        >
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            aria-label="Delete item"
+          />
+        </Popconfirm>
+      </Space>
+    );
+  }
+
   return (
     <>
       <PageCardless />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ ...cardStyle, padding: "20px 24px 4px" }}>
+        <div
+          style={{
+            ...cardStyle,
+            padding: isMobile ? "16px 14px 4px" : "20px 24px 4px",
+          }}
+        >
           <Form
             layout="horizontal"
             onFinish={applyFilters}
@@ -459,7 +508,13 @@ export function ItemsManager({
           </Form>
         </div>
 
-        <div style={{ ...cardStyle, padding: 24, minWidth: 0 }}>
+        <div
+          style={{
+            ...cardStyle,
+            padding: isMobile ? 14 : 24,
+            minWidth: 0,
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -520,10 +575,16 @@ export function ItemsManager({
                 </Space>
               </div>
 
-              <Divider
-                orientation="vertical"
-                style={{ height: 36, margin: "0 2px 2px", alignSelf: "flex-end" }}
-              />
+              {!isMobile ? (
+                <Divider
+                  orientation="vertical"
+                  style={{
+                    height: 36,
+                    margin: "0 2px 2px",
+                    alignSelf: "flex-end",
+                  }}
+                />
+              ) : null}
 
               <div style={{ display: "grid", gap: 4 }}>
                 <span
@@ -556,216 +617,337 @@ export function ItemsManager({
                 </Space>
               </div>
 
-              <Divider
-                orientation="vertical"
-                style={{ height: 36, margin: "0 2px 2px", alignSelf: "flex-end" }}
-              />
+              {!isMobile ? (
+                <Divider
+                  orientation="vertical"
+                  style={{
+                    height: 36,
+                    margin: "0 2px 2px",
+                    alignSelf: "flex-end",
+                  }}
+                />
+              ) : null}
 
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={openCreate}
                 style={{ alignSelf: "flex-end" }}
+                block={isMobile}
               >
                 Add item
               </Button>
             </div>
           </div>
 
-          <TableFrame>
-            <Table<ItemRecord>
-              rowKey="id"
-              dataSource={filteredItems}
-              loading={pending}
-              pagination={{
-                simple: true,
-                current: page,
-                pageSize,
-                showSizeChanger: true,
-                pageSizeOptions: [10, 20, 50, 100],
-                onChange: (nextPage) => setPage(nextPage),
-                onShowSizeChange: (_nextPage, size) => {
-                  setPageSize(size);
-                  setPage(1);
-                },
-              }}
-              scroll={{ x: 1480 }}
-              columns={[
-                {
-                  title: "Name",
-                  dataIndex: "name",
-                  fixed: "left",
-                  width: 240,
-                  render: (value: string, record) => (
-                    <Space size={6} wrap>
-                      {record.notice.trim() ? (
-                        <span
-                          title={record.notice}
-                          style={{ display: "inline-flex", cursor: "help" }}
+          {isMobile ? (
+            filteredItems.length === 0 ? (
+              <div
+                style={{
+                  padding: "28px 12px",
+                  textAlign: "center",
+                  color: "var(--muted)",
+                  fontSize: 14,
+                }}
+              >
+                {emptyText}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {pageItems.map((record) => (
+                  <div
+                    key={record.id}
+                    style={{
+                      padding: 14,
+                      borderRadius: 10,
+                      border: "1px solid var(--border-color)",
+                      background: "var(--page-bg)",
+                      minWidth: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <Space size={6} wrap style={{ marginBottom: 8 }}>
+                          {record.notice.trim() ? (
+                            <span
+                              title={record.notice}
+                              style={{
+                                display: "inline-flex",
+                                cursor: "help",
+                              }}
+                            >
+                              <WarningOutlined
+                                style={{ color: "#faad14" }}
+                                aria-label="Has notice"
+                              />
+                            </span>
+                          ) : null}
+                          <Link
+                            href={`/items/${record.id}`}
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 600,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {record.name}
+                          </Link>
+                          {record.isBox ? (
+                            <Tag color="purple" style={{ marginInlineEnd: 0 }}>
+                              {record.boxPurpose.trim() || "Container"}
+                            </Tag>
+                          ) : null}
+                          {record.onSale ? (
+                            <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                              On sale
+                            </Tag>
+                          ) : null}
+                        </Space>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "6px 12px",
+                            fontSize: 13,
+                            color: "var(--muted)",
+                          }}
                         >
-                          <WarningOutlined
-                            style={{ color: "#faad14" }}
-                            aria-label="Has notice"
-                          />
-                        </span>
-                      ) : null}
-                      <Link href={`/items/${record.id}`}>{value}</Link>
-                      {record.isBox ? (
-                        <span
-                          title="This item is a container (box, bag, case, etc.)"
-                          style={{ display: "inline-flex" }}
-                        >
-                          <Tag color="purple" style={{ marginInlineEnd: 0 }}>
-                            {record.boxPurpose.trim() || "Container"}
-                          </Tag>
-                        </span>
-                      ) : null}
-                      {record.onSale ? (
-                        <span
-                          title={
-                            isFreeSalePrice(record.salePrice)
-                              ? "Sale price: Free"
-                              : record.salePrice?.trim()
-                                ? `Sale price: ${record.salePrice}`
-                                : "Posted for sale"
-                          }
-                          style={{ display: "inline-flex" }}
-                        >
-                          <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                            On sale
-                          </Tag>
-                        </span>
-                      ) : null}
-                    </Space>
-                  ),
-                },
-                {
-                  title: "Brand",
-                  dataIndex: "brand",
-                  width: 120,
-                  ellipsis: true,
-                  render: (value: string) =>
-                    value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-                },
-                {
-                  title: "Color",
-                  dataIndex: "majorColor",
-                  width: 72,
-                  align: "center",
-                  render: (value: string) => <MajorColorSwatch value={value} />,
-                },
-                {
-                  title: "Location",
-                  dataIndex: "locationName",
-                  width: 140,
-                  render: (value: string | null) => value || "—",
-                },
-                {
-                  title: "Categories",
-                  dataIndex: "categories",
-                  width: 180,
-                  render: (value: ItemRecord["categories"]) =>
-                    value.length > 0 ? (
-                      <Space size={[4, 4]} wrap>
-                        {value.map((category) => (
-                          <CategoryTag
-                            key={category.id}
-                            name={category.name}
-                            color={category.color}
-                          />
-                        ))}
+                          <span>{record.locationName || "No location"}</span>
+                          <span>
+                            {record.quantity} {record.unit}
+                          </span>
+                          {record.brand.trim() ? (
+                            <span>{record.brand}</span>
+                          ) : null}
+                          {record.majorColor ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <MajorColorSwatch value={record.majorColor} />
+                            </span>
+                          ) : null}
+                        </div>
+                        {record.categories.length > 0 ? (
+                          <Space size={[4, 4]} wrap style={{ marginTop: 8 }}>
+                            {record.categories.map((category) => (
+                              <CategoryTag
+                                key={category.id}
+                                name={category.name}
+                                color={category.color}
+                              />
+                            ))}
+                          </Space>
+                        ) : null}
+                      </div>
+                      {renderItemActions(record)}
+                    </div>
+                  </div>
+                ))}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: 4,
+                  }}
+                >
+                  <Pagination
+                    simple
+                    current={page}
+                    pageSize={pageSize}
+                    total={filteredItems.length}
+                    showSizeChanger
+                    pageSizeOptions={[10, 20, 50, 100]}
+                    onChange={(nextPage, nextSize) => {
+                      setPage(nextPage);
+                      if (nextSize !== pageSize) {
+                        setPageSize(nextSize);
+                        setPage(1);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          ) : (
+            <TableFrame>
+              <Table<ItemRecord>
+                rowKey="id"
+                dataSource={filteredItems}
+                loading={pending}
+                size="middle"
+                pagination={{
+                  simple: true,
+                  current: page,
+                  pageSize,
+                  showSizeChanger: true,
+                  pageSizeOptions: [10, 20, 50, 100],
+                  onChange: (nextPage) => setPage(nextPage),
+                  onShowSizeChange: (_nextPage, size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  },
+                }}
+                scroll={{ x: 1480 }}
+                columns={[
+                  {
+                    title: "Name",
+                    dataIndex: "name",
+                    fixed: "left",
+                    width: 240,
+                    render: (value: string, record) => (
+                      <Space size={6} wrap>
+                        {record.notice.trim() ? (
+                          <span
+                            title={record.notice}
+                            style={{
+                              display: "inline-flex",
+                              cursor: "help",
+                            }}
+                          >
+                            <WarningOutlined
+                              style={{ color: "#faad14" }}
+                              aria-label="Has notice"
+                            />
+                          </span>
+                        ) : null}
+                        <Link href={`/items/${record.id}`}>{value}</Link>
+                        {record.isBox ? (
+                          <span
+                            title="This item is a container (box, bag, case, etc.)"
+                            style={{ display: "inline-flex" }}
+                          >
+                            <Tag color="purple" style={{ marginInlineEnd: 0 }}>
+                              {record.boxPurpose.trim() || "Container"}
+                            </Tag>
+                          </span>
+                        ) : null}
+                        {record.onSale ? (
+                          <span
+                            title={
+                              isFreeSalePrice(record.salePrice)
+                                ? "Sale price: Free"
+                                : record.salePrice?.trim()
+                                  ? `Sale price: ${record.salePrice}`
+                                  : "Posted for sale"
+                            }
+                            style={{ display: "inline-flex" }}
+                          >
+                            <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                              On sale
+                            </Tag>
+                          </span>
+                        ) : null}
                       </Space>
-                    ) : (
-                      <span style={{ opacity: 0.45 }}>-</span>
                     ),
-                },
-                {
-                  title: "Desc",
-                  dataIndex: "desc",
-                  ellipsis: true,
-                  width: 180,
-                },
-                {
-                  title: "Quantity",
-                  dataIndex: "quantity",
-                  width: 100,
-                },
-                {
-                  title: "Unit",
-                  dataIndex: "unit",
-                  width: 80,
-                },
-                {
-                  title: "Est. price",
-                  dataIndex: "estimatedPrice",
-                  width: 120,
-                  ellipsis: true,
-                },
-                {
-                  title: "Actual price",
-                  dataIndex: "actualPrice",
-                  width: 120,
-                  ellipsis: true,
-                  render: (value: string) =>
-                    value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-                },
-                {
-                  title: "Purchase date",
-                  dataIndex: "purchaseDate",
-                  width: 130,
-                  render: (value: string) =>
-                    value ? value : <span style={{ opacity: 0.45 }}>-</span>,
-                },
-                {
-                  title: "Remarks",
-                  dataIndex: "remarks",
-                  ellipsis: true,
-                  width: 180,
-                },
-                {
-                  title: "Actions",
-                  key: "actions",
-                  width: 120,
-                  fixed: "right",
-                  render: (_, record) => (
-                    <Space size={0}>
-                      <Link href={`/items/${record.id}`}>
-                        <Button
-                          type="link"
-                          icon={<EyeOutlined />}
-                          aria-label="View item"
-                        />
-                      </Link>
-                      <Button
-                        type="link"
-                        icon={<EditOutlined />}
-                        onClick={() => openEdit(record)}
-                        aria-label="Edit item"
-                      />
-                      <Popconfirm
-                        title="Delete this item?"
-                        okText="Delete"
-                        cancelText="Cancel"
-                        onConfirm={() => onDelete(record.id)}
-                      >
-                        <Button
-                          type="link"
-                          danger
-                          icon={<DeleteOutlined />}
-                          aria-label="Delete item"
-                        />
-                      </Popconfirm>
-                    </Space>
-                  ),
-                },
-              ]}
-              locale={{
-                emptyText: hasActiveFilters
-                  ? "No items match these filters."
-                  : "No items yet. Add your first item.",
-              }}
-            />
-          </TableFrame>
+                  },
+                  {
+                    title: "Brand",
+                    dataIndex: "brand",
+                    width: 120,
+                    ellipsis: true,
+                    render: (value: string) =>
+                      value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+                  },
+                  {
+                    title: "Color",
+                    dataIndex: "majorColor",
+                    width: 72,
+                    align: "center",
+                    render: (value: string) => (
+                      <MajorColorSwatch value={value} />
+                    ),
+                  },
+                  {
+                    title: "Location",
+                    dataIndex: "locationName",
+                    width: 140,
+                    render: (value: string | null) => value || "—",
+                  },
+                  {
+                    title: "Categories",
+                    dataIndex: "categories",
+                    width: 180,
+                    render: (value: ItemRecord["categories"]) =>
+                      value.length > 0 ? (
+                        <Space size={[4, 4]} wrap>
+                          {value.map((category) => (
+                            <CategoryTag
+                              key={category.id}
+                              name={category.name}
+                              color={category.color}
+                            />
+                          ))}
+                        </Space>
+                      ) : (
+                        <span style={{ opacity: 0.45 }}>-</span>
+                      ),
+                  },
+                  {
+                    title: "Desc",
+                    dataIndex: "desc",
+                    ellipsis: true,
+                    width: 180,
+                  },
+                  {
+                    title: "Quantity",
+                    dataIndex: "quantity",
+                    width: 100,
+                  },
+                  {
+                    title: "Unit",
+                    dataIndex: "unit",
+                    width: 80,
+                  },
+                  {
+                    title: "Est. price",
+                    dataIndex: "estimatedPrice",
+                    width: 120,
+                    ellipsis: true,
+                  },
+                  {
+                    title: "Actual price",
+                    dataIndex: "actualPrice",
+                    width: 120,
+                    ellipsis: true,
+                    render: (value: string) =>
+                      value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+                  },
+                  {
+                    title: "Purchase date",
+                    dataIndex: "purchaseDate",
+                    width: 130,
+                    render: (value: string) =>
+                      value ? value : <span style={{ opacity: 0.45 }}>-</span>,
+                  },
+                  {
+                    title: "Remarks",
+                    dataIndex: "remarks",
+                    ellipsis: true,
+                    width: 180,
+                  },
+                  {
+                    title: "Actions",
+                    key: "actions",
+                    width: 120,
+                    fixed: "right",
+                    render: (_, record) => renderItemActions(record),
+                  },
+                ]}
+                locale={{ emptyText }}
+              />
+            </TableFrame>
+          )}
         </div>
       </div>
 

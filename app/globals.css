@@ -132,19 +132,27 @@ body {
   height: 100%;
 }
 
-/* Keep tables inside the content card on phones. */
+/* Keep tables inside the content card on phones (iPhone 13 ≈ 390px). */
 .ant-layout-content,
 .ant-layout-content > * {
   min-width: 0;
+  max-width: 100%;
 }
 
 .table-frame {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
-.table-frame .ant-table-wrapper {
+.table-frame .ant-table-wrapper,
+.table-frame .ant-spin-nested-loading,
+.table-frame .ant-spin-container,
+.table-frame .ant-table,
+.table-frame .ant-table-container {
   max-width: 100%;
 }
 
@@ -152,9 +160,31 @@ body {
   min-width: 0;
 }
 
+.table-frame .ant-table-content {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
 .table-frame .ant-pagination {
   flex-wrap: wrap;
   row-gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .table-frame .ant-table {
+    font-size: 13px;
+  }
+
+  .table-frame .ant-table-thead > tr > th,
+  .table-frame .ant-table-tbody > tr > td,
+  .table-frame .ant-table-tbody .ant-table-cell {
+    padding-inline: 10px !important;
+  }
+
+  .table-frame .ant-pagination {
+    margin-top: 12px !important;
+  }
 }
 
 .detail-row {

@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   Modal,
+  Pagination,
   Popconfirm,
   Space,
   Table,
@@ -16,6 +17,12 @@ import type { Color } from "antd/es/color-picker";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { CategoryTag } from "@/components/category-tag";
+import {
+  MobileEmpty,
+  MobileRecordList,
+  mobileRecordCardStyle,
+  mobileRecordMetaStyle,
+} from "@/components/mobile-record-list";
 import { TableFrame } from "@/components/table-frame";
 import {
   createCategory,
@@ -23,6 +30,7 @@ import {
   updateCategory,
   type CategoryRecord,
 } from "@/lib/actions/categories";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 type CategoryFormValues = {
   name: string;
@@ -114,6 +122,7 @@ function CategoryFormModal({
       confirmLoading={pending}
       okText={editing ? "Save" : "Create"}
       destroyOnHidden
+      width="min(520px, calc(100vw - 24px))"
     >
       <Form
         form={form}
@@ -148,9 +157,13 @@ function CategoryFormModal({
 export function CategoriesManager({ categories }: CategoriesManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageItems = categories.slice((page - 1) * pageSize, page * pageSize);
 
   function openCreate() {
     setEditing(null);
@@ -203,6 +216,33 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
     });
   }
 
+  function renderActions(record: CategoryRecord) {
+    return (
+      <Space size={0}>
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => openEdit(record)}
+          aria-label="Edit category"
+        />
+        <Popconfirm
+          title="Delete this category?"
+          description="It will be removed from any items that use it."
+          okText="Delete"
+          cancelText="Cancel"
+          onConfirm={() => onDelete(record.id)}
+        >
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            aria-label="Delete category"
+          />
+        </Popconfirm>
+      </Space>
+    );
+  }
+
   return (
     <>
       <div
@@ -215,73 +255,118 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
           flexWrap: "wrap",
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>Categories</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 24, fontWeight: 600 }}>
+          Categories
+        </h1>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openCreate}
+          block={isMobile}
+        >
           Add category
         </Button>
       </div>
 
-      <TableFrame>
-        <Table<CategoryRecord>
-          rowKey="id"
-          dataSource={categories}
-          loading={pending}
-          pagination={{ pageSize: 10, simple: true }}
-          scroll={{ x: 520 }}
-          columns={[
-            {
-              title: "Name",
-              dataIndex: "name",
-              render: (value: string, record) => (
-                <CategoryTag name={value} color={record.color} />
-              ),
-            },
-            {
-              title: "Color",
-              dataIndex: "color",
-              width: 120,
-              render: (value: string) =>
-                value ? (
-                  <span style={{ fontFamily: "monospace", fontSize: 12 }}>
-                    {value}
-                  </span>
-                ) : (
-                  <span style={{ opacity: 0.45 }}>-</span>
+      {isMobile ? (
+        categories.length === 0 ? (
+          <MobileEmpty>
+            No categories yet. Add your first category.
+          </MobileEmpty>
+        ) : (
+          <MobileRecordList>
+            {pageItems.map((record) => (
+              <div key={record.id} style={mobileRecordCardStyle}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <CategoryTag name={record.name} color={record.color} />
+                    </div>
+                    <div style={mobileRecordMetaStyle}>
+                      <span style={{ fontFamily: "monospace", fontSize: 12 }}>
+                        {record.color || "—"}
+                      </span>
+                    </div>
+                  </div>
+                  {renderActions(record)}
+                </div>
+              </div>
+            ))}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 4,
+              }}
+            >
+              <Pagination
+                simple
+                current={page}
+                pageSize={pageSize}
+                total={categories.length}
+                showSizeChanger
+                pageSizeOptions={[10, 20, 50, 100]}
+                onChange={(nextPage, nextSize) => {
+                  if (nextSize && nextSize !== pageSize) {
+                    setPageSize(nextSize);
+                    setPage(1);
+                    return;
+                  }
+                  setPage(nextPage);
+                }}
+              />
+            </div>
+          </MobileRecordList>
+        )
+      ) : (
+        <TableFrame>
+          <Table<CategoryRecord>
+            rowKey="id"
+            dataSource={categories}
+            loading={pending}
+            pagination={{ pageSize: 10, simple: true }}
+            scroll={{ x: 520 }}
+            columns={[
+              {
+                title: "Name",
+                dataIndex: "name",
+                render: (value: string, record) => (
+                  <CategoryTag name={value} color={record.color} />
                 ),
-            },
-            {
-              title: "Actions",
-              key: "actions",
-              width: 96,
-              render: (_, record) => (
-                <Space size={0}>
-                  <Button
-                    type="link"
-                    icon={<EditOutlined />}
-                    onClick={() => openEdit(record)}
-                    aria-label="Edit category"
-                  />
-                  <Popconfirm
-                    title="Delete this category?"
-                    description="It will be removed from any items that use it."
-                    okText="Delete"
-                    cancelText="Cancel"
-                    onConfirm={() => onDelete(record.id)}
-                  >
-                    <Button
-                      type="link"
-                      danger
-                      icon={<DeleteOutlined />}
-                      aria-label="Delete category"
-                    />
-                  </Popconfirm>
-                </Space>
-              ),
-            },
-          ]}
-          locale={{ emptyText: "No categories yet. Add your first category." }}
-        />
-      </TableFrame>
+              },
+              {
+                title: "Color",
+                dataIndex: "color",
+                width: 120,
+                render: (value: string) =>
+                  value ? (
+                    <span style={{ fontFamily: "monospace", fontSize: 12 }}>
+                      {value}
+                    </span>
+                  ) : (
+                    <span style={{ opacity: 0.45 }}>-</span>
+                  ),
+              },
+              {
+                title: "Actions",
+                key: "actions",
+                width: 96,
+                render: (_, record) => renderActions(record),
+              },
+            ]}
+            locale={{
+              emptyText: "No categories yet. Add your first category.",
+            }}
+          />
+        </TableFrame>
+      )}
 
       <CategoryFormModal
         open={open}
