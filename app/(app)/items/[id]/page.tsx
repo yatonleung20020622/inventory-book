@@ -9,6 +9,7 @@ import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
 import { listLocations } from "@/lib/actions/locations";
 import { AddItemToBox } from "./add-item-to-box";
+import { DuplicateItemButton } from "./duplicate-item-button";
 import { EditItemButton } from "./edit-item-button";
 import { ItemRelations } from "./item-relations";
 
@@ -143,7 +144,7 @@ async function ItemDetails({
             minWidth: 0,
             boxSizing: "border-box",
             padding: "8px 16px",
-            paddingRight: 52,
+            paddingRight: 88,
             borderRadius: 8,
             background: "var(--card-bg)",
             border: "1px solid var(--border-color)",
@@ -155,8 +156,11 @@ async function ItemDetails({
               top: 8,
               right: 8,
               zIndex: 1,
+              display: "flex",
+              gap: 0,
             }}
           >
+            <DuplicateItemButton itemId={item.id} />
             <EditItemButton
               item={item}
               locations={locationOptions}

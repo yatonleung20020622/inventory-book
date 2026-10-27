@@ -667,6 +667,61 @@ export async function deleteItem(id: string): Promise<ItemActionResult> {
   }
 }
 
+/** Shallow-copy an item (fields + categories). Does not copy relations, sales, or box contents. */
+export async function duplicateItem(id: string): Promise<ItemActionResult> {
+  try {
+    const userId = await requireUserId();
+    const source = await prisma.item.findFirst({
+      where: { id, userId },
+      include: {
+        categories: { select: { categoryId: true } },
+      },
+    });
+
+    if (!source) {
+      return { ok: false, message: "Item not found." };
+    }
+
+    const created = await prisma.item.create({
+      data: {
+        name: `${source.name} (copy)`,
+        brand: source.brand,
+        majorColor: source.majorColor,
+        desc: source.desc,
+        quantity: source.quantity,
+        unit: source.unit,
+        estimatedPrice: source.estimatedPrice,
+        actualPrice: source.actualPrice,
+        isBox: source.isBox,
+        boxPurpose: source.boxPurpose,
+        purchaseDate: source.purchaseDate,
+        notice: source.notice,
+        remarks: source.remarks,
+        locationId: source.locationId,
+        userId,
+        categories: {
+          create: source.categories.map((category) => ({
+            categoryId: category.categoryId,
+          })),
+        },
+      },
+      select: { id: true },
+    });
+
+    revalidatePath("/items");
+    revalidatePath(`/items/${created.id}`);
+    revalidatePath("/categories");
+    revalidatePath("/dashboard");
+    return {
+      ok: true,
+      message: "Item duplicated.",
+      itemId: created.id,
+    };
+  } catch {
+    return { ok: false, message: "Failed to duplicate item." };
+  }
+}
+
 export async function importItemsFromCsv(
   csvText: string,
 ): Promise<ImportItemsResult> {
