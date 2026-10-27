@@ -60,7 +60,7 @@ export type ItemExportSource = {
 const SAMPLE_ROW: ItemCsvRow = {
   name: "USB-C 充電線",
   brand: "Apple",
-  majorColor: "Black",
+  majorColor: "#000000",
   desc: "Optional description",
   quantity: "1",
   unit: "個",
