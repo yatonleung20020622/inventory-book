@@ -1,0 +1,19 @@
+# Hong Kong time schedule for the production webserver container.
+# On: 09:00–12:00 and 18:00–03:00. Off otherwise (helps Layerbase free DB sleep).
+#
+# Install on the Docker host (Linux):
+#   1. Edit COMPOSE_DIR below to this repo's absolute path on the server.
+#   2. crontab -e
+#   3. Paste the lines under "crontab entries", with COMPOSE_DIR substituted.
+#
+# Requires: docker compose, and webserver already built once (`docker compose up -d --build webserver`).
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=Asia/Hong_Kong
+
+# --- crontab entries (replace /path/to/inventory-book) ---
+# 0 9  * * * cd /path/to/inventory-book && docker compose start webserver >>/tmp/inventory-book-schedule.log 2>&1
+# 0 12 * * * cd /path/to/inventory-book && docker compose stop webserver  >>/tmp/inventory-book-schedule.log 2>&1
+# 0 18 * * * cd /path/to/inventory-book && docker compose start webserver >>/tmp/inventory-book-schedule.log 2>&1
+# 0 3  * * * cd /path/to/inventory-book && docker compose stop webserver  >>/tmp/inventory-book-schedule.log 2>&1

@@ -36,7 +36,9 @@ services:
     networks:
       expose_network:
       net:
-    restart: always
+    # Controlled by host cron (scripts/docker-schedule.cron, Asia/Hong_Kong).
+    # Do not use "always" or the schedule cannot keep the app offline.
+    restart: "no"
 
 networks:
   # Join proxy network for exposing http services
