@@ -20,6 +20,9 @@ export type TravelPlaceRecord = {
   address: string;
   lat: number;
   lon: number;
+  groupId: string | null;
+  groupName: string;
+  groupColor: string;
   visits: TravelVisitRecord[];
   createdAt: string;
   updatedAt: string;
@@ -48,9 +51,11 @@ type PlaceRow = {
   address: string;
   lat: number;
   lon: number;
+  groupId: string | null;
   createdAt: Date;
   updatedAt: Date;
   visits: VisitRow[];
+  group: { id: string; name: string; color: string } | null;
 };
 
 async function requireLogin() {
@@ -58,6 +63,11 @@ async function requireLogin() {
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
+}
+
+function revalidateTravel() {
+  revalidatePath("/travel");
+  revalidatePath("/travel/places");
 }
 
 function toVisitRecord(visit: VisitRow): TravelVisitRecord {
@@ -79,6 +89,9 @@ function toPlaceRecord(place: PlaceRow): TravelPlaceRecord {
     address: place.address,
     lat: place.lat,
     lon: place.lon,
+    groupId: place.groupId,
+    groupName: place.group?.name ?? "",
+    groupColor: place.group?.color ?? "",
     visits: place.visits.map(toVisitRecord),
     createdAt: place.createdAt.toISOString(),
     updatedAt: place.updatedAt.toISOString(),
@@ -92,10 +105,27 @@ function parseCoord(value: number, label: string): number | null {
   return value;
 }
 
+async function resolveGroupId(
+  groupId: string | null | undefined,
+): Promise<{ ok: true; groupId: string | null } | { ok: false; message: string }> {
+  if (!groupId) {
+    return { ok: true, groupId: null };
+  }
+  const group = await prisma.travelGroup.findUnique({
+    where: { id: groupId },
+    select: { id: true },
+  });
+  if (!group) {
+    return { ok: false, message: "Group not found." };
+  }
+  return { ok: true, groupId: group.id };
+}
+
 export async function listTravelPlaces(): Promise<TravelPlaceRecord[]> {
   await requireLogin();
   const places = await prisma.travelPlace.findMany({
     include: {
+      group: { select: { id: true, name: true, color: true } },
       visits: { orderBy: [{ visitedAt: "desc" }, { createdAt: "desc" }] },
     },
     orderBy: { createdAt: "desc" },
@@ -108,6 +138,7 @@ export async function createTravelPlace(input: {
   lat: number;
   lon: number;
   address?: string;
+  groupId?: string | null;
   firstVisit: {
     visitedAt: string;
     notes?: string;
@@ -123,6 +154,7 @@ export async function createTravelPlace(input: {
     const visitedAt = input.firstVisit.visitedAt.trim();
     const notes = (input.firstVisit.notes ?? "").trim();
     const companions = (input.firstVisit.companions ?? "").trim();
+    const groupResult = await resolveGroupId(input.groupId);
 
     if (!name) {
       return { ok: false, message: "Place name is required." };
@@ -133,6 +165,9 @@ export async function createTravelPlace(input: {
     if (!visitedAt) {
       return { ok: false, message: "Visit date is required." };
     }
+    if (!groupResult.ok) {
+      return { ok: false, message: groupResult.message };
+    }
 
     const place = await prisma.travelPlace.create({
       data: {
@@ -140,6 +175,7 @@ export async function createTravelPlace(input: {
         address,
         lat,
         lon,
+        groupId: groupResult.groupId,
         visits: {
           create: {
             visitedAt,
@@ -150,7 +186,7 @@ export async function createTravelPlace(input: {
       },
     });
 
-    revalidatePath("/travel");
+    revalidateTravel();
     return {
       ok: true,
       message: "Place created.",
@@ -167,6 +203,7 @@ export async function updateTravelPlace(input: {
   address: string;
   lat: number;
   lon: number;
+  groupId?: string | null;
 }): Promise<TravelActionResult> {
   try {
     await requireLogin();
@@ -174,12 +211,16 @@ export async function updateTravelPlace(input: {
     const address = input.address.trim();
     const lat = parseCoord(Number(input.lat), "lat");
     const lon = parseCoord(Number(input.lon), "lon");
+    const groupResult = await resolveGroupId(input.groupId);
 
     if (!name) {
       return { ok: false, message: "Place name is required." };
     }
     if (lat === null || lon === null) {
       return { ok: false, message: "Valid latitude and longitude are required." };
+    }
+    if (!groupResult.ok) {
+      return { ok: false, message: groupResult.message };
     }
 
     const existing = await prisma.travelPlace.findUnique({
@@ -192,10 +233,16 @@ export async function updateTravelPlace(input: {
 
     await prisma.travelPlace.update({
       where: { id: input.id },
-      data: { name, address, lat, lon },
+      data: {
+        name,
+        address,
+        lat,
+        lon,
+        groupId: groupResult.groupId,
+      },
     });
 
-    revalidatePath("/travel");
+    revalidateTravel();
     return { ok: true, message: "Place updated.", placeId: input.id };
   } catch {
     return { ok: false, message: "Failed to update place." };
@@ -216,7 +263,7 @@ export async function deleteTravelPlace(
     }
 
     await prisma.travelPlace.delete({ where: { id } });
-    revalidatePath("/travel");
+    revalidateTravel();
     return { ok: true, message: "Place deleted." };
   } catch {
     return { ok: false, message: "Failed to delete place." };
@@ -256,7 +303,7 @@ export async function createTravelVisit(input: {
       },
     });
 
-    revalidatePath("/travel");
+    revalidateTravel();
     return {
       ok: true,
       message: "Visit added.",
@@ -297,7 +344,7 @@ export async function updateTravelVisit(input: {
       data: { visitedAt, notes, companions },
     });
 
-    revalidatePath("/travel");
+    revalidateTravel();
     return {
       ok: true,
       message: "Visit updated.",
@@ -328,7 +375,7 @@ export async function deleteTravelVisit(
 
     if (visitCount <= 1) {
       await prisma.travelPlace.delete({ where: { id: existing.placeId } });
-      revalidatePath("/travel");
+      revalidateTravel();
       return {
         ok: true,
         message: "Last visit removed; place deleted.",
@@ -337,7 +384,7 @@ export async function deleteTravelVisit(
     }
 
     await prisma.travelVisit.delete({ where: { id } });
-    revalidatePath("/travel");
+    revalidateTravel();
     return {
       ok: true,
       message: "Visit deleted.",

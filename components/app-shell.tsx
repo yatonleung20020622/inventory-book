@@ -15,6 +15,7 @@ import {
   TagsOutlined,
   TagOutlined,
   TeamOutlined,
+  UnorderedListOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Grid, Layout, Menu, Tooltip } from "antd";
@@ -49,6 +50,11 @@ const baseNavItems = [
     key: "/travel",
     icon: <CompassOutlined />,
     label: "Travel map",
+  },
+  {
+    key: "/travel/places",
+    icon: <UnorderedListOutlined />,
+    label: "Travel places",
   },
   {
     key: "/sales",
@@ -165,7 +171,7 @@ function SideNav({
           // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | Users (admin)
           if (
             item.key === "/dashboard" ||
-            item.key === "/travel" ||
+            item.key === "/travel/places" ||
             item.key === "/sales/mine" ||
             (item.key === "/categories" && role === "ADMIN")
           ) {

@@ -199,16 +199,31 @@ model Location {
   @@map("locations")
 }
 
+model TravelGroup {
+  id        String        @id @default(cuid())
+  name      String
+  color     String        @default("")
+  places    TravelPlace[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([name])
+  @@map("travel_groups")
+}
+
 model TravelPlace {
   id        String        @id @default(cuid())
   name      String
   address   String        @default("") @db.Text
   lat       Float
   lon       Float
+  groupId   String?
+  group     TravelGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
   visits    TravelVisit[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
+  @@index([groupId])
   @@map("travel_places")
 }
 

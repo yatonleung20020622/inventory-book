@@ -1,11 +1,15 @@
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
+import { listTravelGroups } from "@/lib/actions/travel-groups";
 import { listTravelPlaces } from "@/lib/actions/travel";
 import { TravelMapManager } from "./travel-map-manager";
 
 async function TravelContent() {
-  const places = await listTravelPlaces();
-  return <TravelMapManager places={places} />;
+  const [places, groups] = await Promise.all([
+    listTravelPlaces(),
+    listTravelGroups(),
+  ]);
+  return <TravelMapManager places={places} groups={groups} />;
 }
 
 export default function TravelPage() {

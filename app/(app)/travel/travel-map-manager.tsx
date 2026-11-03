@@ -15,15 +15,18 @@ import {
   Input,
   Modal,
   Popconfirm,
+  Select,
   Space,
   Typography,
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { CategoryTag } from "@/components/category-tag";
 import { PageCardless } from "@/components/page-above-card";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import type { TravelGroupRecord } from "@/lib/actions/travel-groups";
 import {
   createTravelPlace,
   createTravelVisit,
@@ -60,6 +63,7 @@ const TravelLeafletMap = dynamic(
 type PlaceFormValues = {
   name: string;
   address: string;
+  groupId?: string | null;
   visitedAt: Dayjs;
   notes: string;
   companions: string;
@@ -74,10 +78,12 @@ type VisitFormValues = {
 type EditPlaceFormValues = {
   name: string;
   address: string;
+  groupId?: string | null;
 };
 
 type TravelMapManagerProps = {
   places: TravelPlaceRecord[];
+  groups: TravelGroupRecord[];
 };
 
 function formatVisitDate(value: string) {
@@ -85,12 +91,15 @@ function formatVisitDate(value: string) {
   return parsed.isValid() ? parsed.format("YYYY-MM-DD") : value;
 }
 
-export function TravelMapManager({ places }: TravelMapManagerProps) {
+export function TravelMapManager({ places, groups }: TravelMapManagerProps) {
   const { message } = App.useApp();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [focusToken, setFocusToken] = useState(0);
+  const focusedQueryRef = useRef<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createCoords, setCreateCoords] = useState<{
@@ -120,10 +129,23 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
   }, [places, selectedPlaceId]);
 
   useEffect(() => {
+    const placeId = searchParams.get("place");
+    if (!placeId || focusedQueryRef.current === placeId) return;
+    if (!places.some((place) => place.id === placeId)) return;
+    focusedQueryRef.current = placeId;
+    setSelectedPlaceId(placeId);
+    setPanelOpen(true);
+    setFocusToken((value) => value + 1);
+    // Clear the query without a Next navigation remount (that was crashing Leaflet panes).
+    window.history.replaceState(window.history.state, "", "/travel");
+  }, [places, searchParams]);
+
+  useEffect(() => {
     if (!createOpen) return;
     createForm.setFieldsValue({
       name: "",
       address: "",
+      groupId: null,
       visitedAt: dayjs(),
       notes: "",
       companions: "",
@@ -135,6 +157,7 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
     editPlaceForm.setFieldsValue({
       name: selectedPlace.name,
       address: selectedPlace.address,
+      groupId: selectedPlace.groupId,
     });
   }, [editPlaceOpen, selectedPlace, editPlaceForm]);
 
@@ -173,6 +196,7 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
         address: values.address,
         lat: createCoords.lat,
         lon: createCoords.lon,
+        groupId: values.groupId || null,
         firstVisit: {
           visitedAt: values.visitedAt.format("YYYY-MM-DD"),
           notes: values.notes,
@@ -203,6 +227,7 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
         address: values.address,
         lat: selectedPlace.lat,
         lon: selectedPlace.lon,
+        groupId: values.groupId || null,
       });
       if (!result.ok) {
         message.error(result.message);
@@ -279,7 +304,18 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
   }
 
   const placePanel = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        height: "100%",
+        minHeight: 0,
+        ...(selectedPlace
+          ? {}
+          : { justifyContent: "center", alignItems: "center" }),
+      }}
+    >
       {selectedPlace ? (
         <>
           <div
@@ -294,6 +330,14 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
               <Typography.Title level={4} style={{ margin: 0 }}>
                 {selectedPlace.name}
               </Typography.Title>
+              {selectedPlace.groupName ? (
+                <div style={{ marginTop: 6 }}>
+                  <CategoryTag
+                    name={selectedPlace.groupName}
+                    color={selectedPlace.groupColor}
+                  />
+                </div>
+              ) : null}
               {selectedPlace.address ? (
                 <Typography.Paragraph
                   type="secondary"
@@ -411,6 +455,7 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
         <Empty
           description="Click the map to add a place, or select a pin"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
+          style={{ margin: 0 }}
         />
       )}
     </div>
@@ -483,6 +528,7 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
           <TravelLeafletMap
             places={places}
             selectedPlaceId={selectedPlaceId}
+            focusToken={focusToken}
             onSelectPlace={openPlace}
             onMapClick={onMapClick}
           />
@@ -498,6 +544,9 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
               borderRadius: 8,
               padding: 16,
               overflow: "auto",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
             }}
           >
             {placePanel}
@@ -549,6 +598,16 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
           <Form.Item name="address" label="Address">
             <Input placeholder="Optional" />
           </Form.Item>
+          <Form.Item name="groupId" label="Group">
+            <Select
+              allowClear
+              placeholder="Optional"
+              options={groups.map((group) => ({
+                value: group.id,
+                label: group.name,
+              }))}
+            />
+          </Form.Item>
           <Form.Item
             name="visitedAt"
             label="Visit date"
@@ -590,6 +649,16 @@ export function TravelMapManager({ places }: TravelMapManagerProps) {
           </Form.Item>
           <Form.Item name="address" label="Address">
             <Input />
+          </Form.Item>
+          <Form.Item name="groupId" label="Group">
+            <Select
+              allowClear
+              placeholder="Optional"
+              options={groups.map((group) => ({
+                value: group.id,
+                label: group.name,
+              }))}
+            />
           </Form.Item>
         </Form>
       </Modal>
