@@ -2,6 +2,7 @@
 
 import {
   AppstoreOutlined,
+  CompassOutlined,
   DashboardOutlined,
   DeleteOutlined,
   EnvironmentOutlined,
@@ -43,6 +44,11 @@ const baseNavItems = [
     key: "/dashboard",
     icon: <DashboardOutlined />,
     label: "Dashboard",
+  },
+  {
+    key: "/travel",
+    icon: <CompassOutlined />,
+    label: "Travel map",
   },
   {
     key: "/sales",
@@ -156,9 +162,10 @@ function SideNav({
               </Link>
             ),
           };
-          // Group breaks: Dashboard | Selling | Items + Locations + Categories | Users (admin)
+          // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | Users (admin)
           if (
             item.key === "/dashboard" ||
+            item.key === "/travel" ||
             item.key === "/sales/mine" ||
             (item.key === "/categories" && role === "ADMIN")
           ) {

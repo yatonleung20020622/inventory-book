@@ -198,3 +198,30 @@ model Location {
   @@index([userId])
   @@map("locations")
 }
+
+model TravelPlace {
+  id        String        @id @default(cuid())
+  name      String
+  address   String        @default("") @db.Text
+  lat       Float
+  lon       Float
+  visits    TravelVisit[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("travel_places")
+}
+
+model TravelVisit {
+  id         String      @id @default(cuid())
+  placeId    String
+  place      TravelPlace @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  visitedAt  String
+  notes      String      @default("") @db.Text
+  companions String      @default("") @db.Text
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([placeId])
+  @@map("travel_visits")
+}

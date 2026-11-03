@@ -9,6 +9,8 @@ export const config = {
     "/items/:path*",
     "/locations/:path*",
     "/location-history/:path*",
+    "/travel",
+    "/travel/:path*",
     "/sales",
     "/sales/:path*",
     "/profile/:path*",
