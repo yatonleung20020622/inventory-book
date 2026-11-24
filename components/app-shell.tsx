@@ -119,6 +119,9 @@ function SideNav({
   const navItems =
     role === "ADMIN" ? [...baseNavItems, adminNavItem] : baseNavItems;
 
+  // Drawer already shows "Inventory Book" in its header; skip the brand row there.
+  const hideBrand = Boolean(onNavigate);
+
   return (
     <div
       style={{
@@ -126,75 +129,88 @@ function SideNav({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
+        overflow: "hidden",
       }}
     >
+      {!hideBrand ? (
+        <div
+          style={{
+            height: 64,
+            margin: collapsed ? "0 8px" : "0 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          <Link href="/dashboard" onClick={onNavigate}>
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: collapsed ? 14 : 16,
+                fontWeight: 600,
+              }}
+            >
+              {collapsed ? "IB" : "Inventory Book"}
+            </Text>
+          </Link>
+        </div>
+      ) : null}
+
       <div
         style={{
-          height: 64,
-          margin: collapsed ? "0 8px" : "0 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          flexShrink: 0,
-        }}
-      >
-        <Link href="/dashboard" onClick={onNavigate}>
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: collapsed ? 14 : 16,
-              fontWeight: 600,
-            }}
-          >
-            {collapsed ? "IB" : "Inventory Book"}
-          </Text>
-        </Link>
-      </div>
-
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={
-          selectedKey === "/profile" ? [] : selectedKey ? [selectedKey] : []
-        }
-        items={navItems.flatMap((item) => {
-          const menuItem = {
-            ...item,
-            label: (
-              <Link href={item.key} onClick={onNavigate}>
-                {item.label}
-              </Link>
-            ),
-          };
-          // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | Users (admin)
-          if (
-            item.key === "/dashboard" ||
-            item.key === "/travel/places" ||
-            item.key === "/sales/mine" ||
-            (item.key === "/categories" && role === "ADMIN")
-          ) {
-            return [
-              menuItem,
-              { type: "divider" as const, key: `${item.key}-divider` },
-            ];
-          }
-          return [menuItem];
-        })}
-        style={{
-          borderInlineEnd: 0,
-          background: "transparent",
           flex: 1,
           minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
         }}
-      />
+      >
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={
+            selectedKey === "/profile" ? [] : selectedKey ? [selectedKey] : []
+          }
+          items={navItems.flatMap((item) => {
+            const menuItem = {
+              ...item,
+              label: (
+                <Link href={item.key} onClick={onNavigate}>
+                  {item.label}
+                </Link>
+              ),
+            };
+            // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | Users (admin)
+            if (
+              item.key === "/dashboard" ||
+              item.key === "/travel/places" ||
+              item.key === "/sales/mine" ||
+              (item.key === "/categories" && role === "ADMIN")
+            ) {
+              return [
+                menuItem,
+                { type: "divider" as const, key: `${item.key}-divider` },
+              ];
+            }
+            return [menuItem];
+          })}
+          style={{
+            borderInlineEnd: 0,
+            background: "transparent",
+          }}
+        />
+      </div>
 
       <div
         style={{
           flexShrink: 0,
           padding: collapsed ? "12px 8px" : "12px 12px",
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
           borderTop: "1px solid rgba(255,255,255,0.12)",
+          background: "var(--sider-bg)",
         }}
       >
         <Tooltip title={email} placement="right">
@@ -370,13 +386,15 @@ export function AppShell({
         }
         closeIcon={<span style={{ color: "#fff" }}>×</span>}
       >
-        <SideNav
-          email={email}
-          username={username}
-          role={role}
-          selectedKey={selectedKey}
-          onNavigate={() => setDrawerOpen(false)}
-        />
+        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <SideNav
+            email={email}
+            username={username}
+            role={role}
+            selectedKey={selectedKey}
+            onNavigate={() => setDrawerOpen(false)}
+          />
+        </div>
       </Drawer>
 
       <Layout style={{ minHeight: 0, minWidth: 0, overflow: "hidden" }}>
