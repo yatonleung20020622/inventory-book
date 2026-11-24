@@ -1,5 +1,6 @@
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getPublishedCv } from "@/lib/actions/cv";
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
 };
 
 async function CvContent() {
+  await connection();
   const profile = await getPublishedCv();
   if (!profile) {
     return <CvUnavailable />;

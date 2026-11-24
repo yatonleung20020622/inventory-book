@@ -1,6 +1,7 @@
 import { Figtree, Literata } from "next/font/google";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getPublicDeclutterListing } from "@/lib/actions/declutter";
@@ -37,6 +38,7 @@ export async function generateMetadata({
 }
 
 async function DeclutterDetailContent({ id }: { id: string }) {
+  await connection();
   const listing = await getPublicDeclutterListing(id);
   if (!listing) {
     notFound();

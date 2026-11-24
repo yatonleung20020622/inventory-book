@@ -1,5 +1,6 @@
 import { Figtree, Literata } from "next/font/google";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { listPublicDeclutterListings } from "@/lib/actions/declutter";
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
 };
 
 async function DeclutterContent() {
+  await connection();
   const listings = await listPublicDeclutterListings();
   return <DeclutterBrowse listings={listings} />;
 }
