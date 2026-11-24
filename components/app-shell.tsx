@@ -11,12 +11,14 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  ScheduleOutlined,
   ShopOutlined,
   FileTextOutlined,
   HeartOutlined,
   TagsOutlined,
   TagOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
   UnorderedListOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -42,12 +44,26 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-const baseNavItems = [
+const dashboardNavItem = {
+  key: "/dashboard",
+  icon: <DashboardOutlined />,
+  label: "Dashboard",
+};
+
+const trainingNavItems = [
   {
-    key: "/dashboard",
-    icon: <DashboardOutlined />,
-    label: "Dashboard",
+    key: "/training",
+    icon: <ThunderboltOutlined />,
+    label: "Training",
   },
+  {
+    key: "/training/exercises",
+    icon: <UnorderedListOutlined />,
+    label: "Exercises",
+  },
+];
+
+const restNavItems = [
   {
     key: "/travel",
     icon: <CompassOutlined />,
@@ -57,6 +73,11 @@ const baseNavItems = [
     key: "/travel/places",
     icon: <UnorderedListOutlined />,
     label: "Travel places",
+  },
+  {
+    key: "/travel/plans",
+    icon: <ScheduleOutlined />,
+    label: "Travel plans",
   },
   {
     key: "/sales",
@@ -116,15 +137,17 @@ const adminNavItems = [
 ];
 
 function buildNavItems(role: "USER" | "ADMIN") {
+  // Admin: Dashboard → CV → Declutter → Training → Exercises → …
+  // Others: Dashboard → Training → Exercises → …
   if (role !== "ADMIN") {
-    return baseNavItems;
+    return [dashboardNavItem, ...trainingNavItems, ...restNavItems];
   }
-  // Dashboard → CV CMS → Declutter CMS (each its own nav group), then the rest.
   return [
-    baseNavItems[0],
+    dashboardNavItem,
     cvCmsNavItem,
     declutterNavItem,
-    ...baseNavItems.slice(1),
+    ...trainingNavItems,
+    ...restNavItems,
     ...adminNavItems,
   ];
 }
@@ -212,12 +235,13 @@ function SideNav({
                 </Link>
               ),
             };
-            // Group breaks: Dashboard | CV | Declutter | Travel | Selling | Items… | Users
+            // Group breaks: Dashboard | CV | Declutter | Training | Travel | Selling | Items… | Users
             if (
               item.key === "/dashboard" ||
               item.key === "/admin/cv" ||
               item.key === "/admin/declutter" ||
-              item.key === "/travel/places" ||
+              item.key === "/training/exercises" ||
+              item.key === "/travel/plans" ||
               item.key === "/sales/mine" ||
               (item.key === "/categories" && role === "ADMIN")
             ) {
@@ -244,7 +268,13 @@ function SideNav({
           background: "var(--sider-bg)",
         }}
       >
-        <Tooltip title={email} placement="right">
+        <Tooltip
+          title={email}
+          placement="right"
+          getPopupContainer={(trigger) =>
+            trigger.parentElement ?? document.body
+          }
+        >
           <Link
             href="/profile"
             onClick={onNavigate}

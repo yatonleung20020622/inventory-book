@@ -242,6 +242,49 @@ model TravelVisit {
   @@map("travel_visits")
 }
 
+enum TravelPlanItemStatus {
+  IDEA
+  RESEARCHING
+  BOOKED
+  SKIPPED
+}
+
+model TravelPlan {
+  id        String           @id @default(cuid())
+  title     String
+  summary   String           @default("") @db.Text
+  startDate String           @default("")
+  endDate   String           @default("")
+  notes     String           @default("") @db.Text
+  items     TravelPlanItem[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([startDate])
+  @@map("travel_plans")
+}
+
+model TravelPlanItem {
+  id        String                @id @default(cuid())
+  planId    String
+  plan      TravelPlan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title     String
+  notes     String                @default("") @db.Text
+  url       String                @default("")
+  status    TravelPlanItemStatus  @default(IDEA)
+  startDate String                @default("")
+  endDate   String                @default("")
+  cost      String                @default("")
+  sortOrder Int                   @default(0)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([planId])
+  @@index([status])
+  @@index([sortOrder])
+  @@map("travel_plan_items")
+}
+
 model CvProfile {
   id             String         @id @default(cuid())
   displayName    String
@@ -338,4 +381,72 @@ model DeclutterListing {
   @@index([status])
   @@index([sortOrder])
   @@map("declutter_listings")
+}
+
+enum TrainSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model TrainExercise {
+  id               String                 @id @default(cuid())
+  name             String                 @unique
+  defaultRestSec   Int                    @default(60)
+  notes            String                 @default("") @db.Text
+  sortOrder        Int                    @default(0)
+  sessionExercises TrainSessionExercise[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([sortOrder])
+  @@map("train_exercises")
+}
+
+model TrainSession {
+  id         String              @id @default(cuid())
+  title      String              @default("")
+  startedAt  DateTime
+  finishedAt DateTime?
+  status     TrainSessionStatus  @default(IN_PROGRESS)
+  notes      String              @default("") @db.Text
+  exercises  TrainSessionExercise[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("train_sessions")
+}
+
+model TrainSessionExercise {
+  id            String        @id @default(cuid())
+  sessionId     String
+  session       TrainSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId    String
+  exercise      TrainExercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  sortOrder     Int           @default(0)
+  targetRestSec Int           @default(60)
+  sets          TrainSet[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([sessionId])
+  @@index([exerciseId])
+  @@map("train_session_exercises")
+}
+
+model TrainSet {
+  id                String               @id @default(cuid())
+  sessionExerciseId String
+  sessionExercise   TrainSessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+  setIndex          Int
+  reps              Int                  @default(0)
+  durationSec       Int                  @default(0)
+  restAfterSec      Int                  @default(0)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([sessionExerciseId, setIndex])
+  @@index([sessionExerciseId])
+  @@map("train_sets")
 }

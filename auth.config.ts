@@ -40,6 +40,7 @@ export const authConfig = {
         pathname.startsWith("/locations") ||
         pathname.startsWith("/location-history") ||
         pathname.startsWith("/travel") ||
+        pathname.startsWith("/training") ||
         pathname.startsWith("/categories") ||
         pathname.startsWith("/sales") ||
         pathname.startsWith("/profile") ||

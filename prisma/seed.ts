@@ -648,6 +648,73 @@ async function seedDeclutterListing(adminUserId: string) {
   console.log("Seeded example declutter listing for /public/declutter.");
 }
 
+async function seedTravelPlan() {
+  const existing = await prisma.travelPlan.findFirst({
+    select: { id: true },
+  });
+  if (existing) {
+    console.log("Travel plan already present — skipped.");
+    return;
+  }
+
+  await prisma.travelPlan.create({
+    data: {
+      title: "Example trip",
+      summary: "Sample research plan. Replace or delete in Travel plans.",
+      startDate: "",
+      endDate: "",
+      notes: "",
+      items: {
+        create: [
+          {
+            title: "Example hotel",
+            notes: "Look up reviews and cancelation policy.",
+            url: "https://example.com",
+            status: "IDEA",
+            startDate: "",
+            endDate: "",
+            cost: "",
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+  console.log("Seeded example travel plan for /travel/plans.");
+}
+
+async function seedTrainExercises() {
+  const existing = await prisma.trainExercise.count();
+  if (existing > 0) {
+    console.log("Training exercises already present — skipped.");
+    return;
+  }
+
+  await prisma.trainExercise.createMany({
+    data: [
+      {
+        name: "Push-up",
+        defaultRestSec: 60,
+        notes: "Bodyweight chest / triceps.",
+        sortOrder: 0,
+      },
+      {
+        name: "Squats",
+        defaultRestSec: 90,
+        notes: "Bodyweight lower body.",
+        sortOrder: 1,
+      },
+      {
+        name: "Plank",
+        defaultRestSec: 45,
+        notes: "Use duration seconds for hold time.",
+        sortOrder: 2,
+      },
+    ],
+  });
+  console.log("Seeded sample training exercises.");
+}
+
 async function seedCvProfile() {
   const existing = await prisma.cvProfile.findFirst({
     select: { id: true },
@@ -735,6 +802,8 @@ async function main() {
   );
 
   await seedCvProfile();
+  await seedTrainExercises();
+  await seedTravelPlan();
 
   const seedDemo = wantsDemoSeed();
   if (!seedDemo) {
