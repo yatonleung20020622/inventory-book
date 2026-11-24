@@ -29,9 +29,9 @@ export function DeclutterLikeButton({
       }}
       icon={
         liked ? (
-          <HeartFilled style={{ color: "var(--cv-accent)" }} />
+          <HeartFilled style={{ color: "var(--dc-accent)" }} />
         ) : (
-          <HeartOutlined style={{ color: "var(--cv-muted)" }} />
+          <HeartOutlined style={{ color: "var(--dc-muted)" }} />
         )
       }
       style={{ paddingInline: 8 }}

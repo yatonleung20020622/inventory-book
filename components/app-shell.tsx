@@ -95,23 +95,39 @@ const baseNavItems = [
   },
 ];
 
+const cvCmsNavItem = {
+  key: "/admin/cv",
+  icon: <FileTextOutlined />,
+  label: "CV CMS",
+};
+
+const declutterNavItem = {
+  key: "/admin/declutter",
+  icon: <HeartOutlined />,
+  label: "Declutter CMS",
+};
+
 const adminNavItems = [
-  {
-    key: "/admin/cv",
-    icon: <FileTextOutlined />,
-    label: "CV CMS",
-  },
-  {
-    key: "/admin/declutter",
-    icon: <HeartOutlined />,
-    label: "Declutter CMS",
-  },
   {
     key: "/admin/users",
     icon: <TeamOutlined />,
     label: "Users",
   },
 ];
+
+function buildNavItems(role: "USER" | "ADMIN") {
+  if (role !== "ADMIN") {
+    return baseNavItems;
+  }
+  // Dashboard → CV CMS → Declutter CMS (each its own nav group), then the rest.
+  return [
+    baseNavItems[0],
+    cvCmsNavItem,
+    declutterNavItem,
+    ...baseNavItems.slice(1),
+    ...adminNavItems,
+  ];
+}
 
 function SideNav({
   email,
@@ -130,8 +146,7 @@ function SideNav({
 }) {
   const profileActive = selectedKey === "/profile";
   const displayName = username.trim() || "Account";
-  const navItems =
-    role === "ADMIN" ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  const navItems = buildNavItems(role);
 
   // Drawer already shows "Inventory Book" in its header; skip the brand row there.
   const hideBrand = Boolean(onNavigate);
@@ -197,13 +212,14 @@ function SideNav({
                 </Link>
               ),
             };
-            // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | admin CMS | Users
+            // Group breaks: Dashboard | CV | Declutter | Travel | Selling | Items… | Users
             if (
               item.key === "/dashboard" ||
+              item.key === "/admin/cv" ||
+              item.key === "/admin/declutter" ||
               item.key === "/travel/places" ||
               item.key === "/sales/mine" ||
-              (item.key === "/categories" && role === "ADMIN") ||
-              item.key === "/admin/declutter"
+              (item.key === "/categories" && role === "ADMIN")
             ) {
               return [
                 menuItem,
@@ -322,8 +338,7 @@ export function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isMobile = mounted ? !screens.lg : false;
-  const navItems =
-    role === "ADMIN" ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  const navItems = buildNavItems(role);
 
   const selectedKey = pathname.startsWith("/profile")
     ? "/profile"

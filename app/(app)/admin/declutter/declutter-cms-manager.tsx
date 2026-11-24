@@ -207,7 +207,7 @@ export function DeclutterCmsManager({
               title: "Title",
               dataIndex: "title",
               render: (title: string, row) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                   <span>{title}</span>
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                     {row.price.trim() ? row.price : "Free"}

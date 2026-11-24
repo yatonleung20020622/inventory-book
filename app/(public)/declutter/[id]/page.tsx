@@ -1,4 +1,4 @@
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { Figtree, Literata } from "next/font/google";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -6,15 +6,15 @@ import { PageLoading } from "@/components/page-loading";
 import { getPublicDeclutterListing } from "@/lib/actions/declutter";
 import { DeclutterDetail } from "../declutter-detail";
 
-const display = Fraunces({
+const display = Literata({
   subsets: ["latin"],
-  variable: "--font-cv-display",
+  variable: "--font-dc-display",
   weight: ["500", "600", "700"],
 });
 
-const sans = Source_Sans_3({
+const sans = Figtree({
   subsets: ["latin"],
-  variable: "--font-cv-sans",
+  variable: "--font-dc-sans",
   weight: ["400", "500", "600", "700"],
 });
 

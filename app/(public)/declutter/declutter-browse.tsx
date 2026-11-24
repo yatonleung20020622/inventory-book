@@ -52,7 +52,7 @@ export function DeclutterBrowse({
         <p
           style={{
             margin: "0 0 12px",
-            color: "var(--cv-muted)",
+            color: "var(--dc-muted)",
             fontSize: 13,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
@@ -61,11 +61,11 @@ export function DeclutterBrowse({
           Letting go
         </p>
         <h1
-          className="cv-display"
+          className="dc-display"
           style={{
             margin: 0,
             fontSize: "clamp(2.2rem, 6vw, 3.4rem)",
-            color: "var(--cv-fg)",
+            color: "var(--dc-fg)",
           }}
         >
           Declutter
@@ -74,7 +74,7 @@ export function DeclutterBrowse({
           style={{
             margin: "14px 0 0",
             maxWidth: "42ch",
-            color: "var(--cv-muted)",
+            color: "var(--dc-muted)",
             lineHeight: 1.55,
           }}
         >
@@ -102,9 +102,9 @@ export function DeclutterBrowse({
                 aria-selected={active}
                 onClick={() => setFilter(item.key)}
                 style={{
-                  border: `1px solid ${active ? "var(--cv-accent)" : "var(--cv-rule)"}`,
-                  background: active ? "var(--cv-accent-soft)" : "transparent",
-                  color: "var(--cv-fg)",
+                  border: `1px solid ${active ? "var(--dc-accent)" : "var(--dc-rule)"}`,
+                  background: active ? "var(--dc-accent-soft)" : "transparent",
+                  color: "var(--dc-fg)",
                   borderRadius: 999,
                   padding: "6px 14px",
                   cursor: "pointer",
@@ -120,7 +120,7 @@ export function DeclutterBrowse({
       </header>
 
       {visible.length === 0 ? (
-        <p style={{ color: "var(--cv-muted)", margin: 0 }}>
+        <p style={{ color: "var(--dc-muted)", margin: 0 }}>
           {filter === "liked"
             ? "No liked items yet. Tap the heart on a listing to save it here."
             : "Nothing listed right now."}
@@ -143,8 +143,8 @@ export function DeclutterBrowse({
                   display: "flex",
                   alignItems: "stretch",
                   gap: 4,
-                  background: "var(--cv-panel)",
-                  border: "1px solid var(--cv-rule)",
+                  background: "var(--dc-panel)",
+                  border: "1px solid var(--dc-rule)",
                   borderRadius: 12,
                   overflow: "hidden",
                 }}
@@ -179,7 +179,7 @@ export function DeclutterBrowse({
                     </h2>
                     <span
                       style={{
-                        color: "var(--cv-accent)",
+                        color: "var(--dc-accent)",
                         fontWeight: 600,
                         fontSize: 15,
                       }}
@@ -193,7 +193,7 @@ export function DeclutterBrowse({
                       display: "flex",
                       flexWrap: "wrap",
                       gap: 8,
-                      color: "var(--cv-muted)",
+                      color: "var(--dc-muted)",
                       fontSize: 13,
                     }}
                   >
@@ -217,7 +217,7 @@ export function DeclutterBrowse({
                             height: 8,
                             borderRadius: "50%",
                             background:
-                              listing.category.color || "var(--cv-accent)",
+                              listing.category.color || "var(--dc-accent)",
                           }}
                         />
                         {listing.category.name}

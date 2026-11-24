@@ -26,6 +26,16 @@
   --cv-accent-soft: rgba(15, 110, 86, 0.12);
   --cv-rule: rgba(21, 32, 43, 0.12);
   --cv-panel: rgba(255, 255, 255, 0.55);
+  --dc-page-bg:
+    radial-gradient(1100px 560px at 88% -12%, #d7e6f4 0%, transparent 52%),
+    radial-gradient(800px 420px at 0% 12%, #e4e9f2 0%, transparent 48%),
+    linear-gradient(180deg, #eef2f6 0%, #e2e8f0 100%);
+  --dc-fg: #0f172a;
+  --dc-muted: rgba(15, 23, 42, 0.58);
+  --dc-accent: #0369a1;
+  --dc-accent-soft: rgba(3, 105, 161, 0.12);
+  --dc-rule: rgba(15, 23, 42, 0.12);
+  --dc-panel: rgba(255, 255, 255, 0.7);
 }
 
 [data-theme="dark"] {
@@ -51,6 +61,16 @@
   --cv-accent-soft: rgba(93, 204, 168, 0.14);
   --cv-rule: rgba(232, 238, 233, 0.14);
   --cv-panel: rgba(18, 24, 28, 0.55);
+  --dc-page-bg:
+    radial-gradient(900px 480px at 88% -10%, #16324a 0%, transparent 50%),
+    radial-gradient(700px 400px at 0% 8%, #1a2030 0%, transparent 48%),
+    linear-gradient(180deg, #0b1220 0%, #111827 100%);
+  --dc-fg: #e8eef7;
+  --dc-muted: rgba(232, 238, 247, 0.6);
+  --dc-accent: #38bdf8;
+  --dc-accent-soft: rgba(56, 189, 248, 0.14);
+  --dc-rule: rgba(232, 238, 247, 0.14);
+  --dc-panel: rgba(17, 24, 39, 0.65);
 }
 
 @theme inline {
@@ -356,6 +376,24 @@ body {
 /* Public CV page */
 .cv-public-shell {
   font-family: var(--font-cv-sans), var(--font-geist-sans), sans-serif;
+}
+
+/* Public Declutter page (independent of CV) */
+.dc-public-shell {
+  font-family: var(--font-dc-sans), var(--font-geist-sans), sans-serif;
+}
+
+.dc-display {
+  font-family: var(--font-dc-display), var(--font-geist-sans), serif;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.dc-section-title {
+  font-family: var(--font-dc-display), serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
 }
 
 .cv-display {
