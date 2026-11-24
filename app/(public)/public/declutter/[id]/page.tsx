@@ -26,6 +26,7 @@ type PageProps = {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
+  await connection();
   const { id } = await params;
   const listing = await getPublicDeclutterListing(id);
   if (!listing) {
