@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { DeclutterListingRecord } from "@/lib/actions/declutter";
 import { DeclutterLikeButton } from "./declutter-like-button";
 import { useDeclutterLikes } from "./use-declutter-likes";
@@ -26,19 +26,85 @@ function priceLabel(price: string) {
   return trimmed ? trimmed : "Free";
 }
 
+function FilterPill({
+  active,
+  onClick,
+  children,
+  color,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  color?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        border: `1px solid ${active ? "var(--dc-accent)" : "var(--dc-rule)"}`,
+        background: active ? "var(--dc-accent-soft)" : "transparent",
+        color: "var(--dc-fg)",
+        borderRadius: 999,
+        padding: "6px 14px",
+        cursor: "pointer",
+        font: "inherit",
+        fontSize: 14,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {color ? (
+        <span
+          aria-hidden
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: color,
+            flexShrink: 0,
+          }}
+        />
+      ) : null}
+      {children}
+    </button>
+  );
+}
+
 export function DeclutterBrowse({
   listings,
 }: {
   listings: DeclutterListingRecord[];
 }) {
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const { likedSet, hydrated } = useDeclutterLikes();
 
+  const categories = useMemo(() => {
+    const byId = new Map<
+      string,
+      { id: string; name: string; color: string }
+    >();
+    for (const listing of listings) {
+      if (!listing.category) continue;
+      byId.set(listing.category.id, listing.category);
+    }
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [listings]);
+
   const visible = useMemo(() => {
-    if (filter !== "liked") return listings;
-    if (!hydrated) return [];
-    return listings.filter((listing) => likedSet.has(listing.id));
-  }, [filter, hydrated, likedSet, listings]);
+    let rows = listings;
+    if (filter === "liked") {
+      if (!hydrated) return [];
+      rows = rows.filter((listing) => likedSet.has(listing.id));
+    }
+    if (categoryId) {
+      rows = rows.filter((listing) => listing.categoryId === categoryId);
+    }
+    return rows;
+  }, [categoryId, filter, hydrated, likedSet, listings]);
 
   return (
     <div
@@ -83,47 +149,71 @@ export function DeclutterBrowse({
         </p>
 
         <div
-          role="tablist"
+          role="group"
           aria-label="Listing filter"
-          style={{ display: "flex", gap: 8, marginTop: 24 }}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            marginTop: 24,
+          }}
         >
           {(
             [
               { key: "all", label: "All" },
               { key: "liked", label: "Liked" },
             ] as const
-          ).map((item) => {
-            const active = filter === item.key;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setFilter(item.key)}
-                style={{
-                  border: `1px solid ${active ? "var(--dc-accent)" : "var(--dc-rule)"}`,
-                  background: active ? "var(--dc-accent-soft)" : "transparent",
-                  color: "var(--dc-fg)",
-                  borderRadius: 999,
-                  padding: "6px 14px",
-                  cursor: "pointer",
-                  font: "inherit",
-                  fontSize: 14,
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+          ).map((item) => (
+            <FilterPill
+              key={item.key}
+              active={filter === item.key}
+              onClick={() => setFilter(item.key)}
+            >
+              {item.label}
+            </FilterPill>
+          ))}
         </div>
+
+        {categories.length > 0 ? (
+          <div
+            role="group"
+            aria-label="Category filter"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginTop: 12,
+            }}
+          >
+            <FilterPill
+              active={categoryId === null}
+              onClick={() => setCategoryId(null)}
+            >
+              All categories
+            </FilterPill>
+            {categories.map((category) => (
+              <FilterPill
+                key={category.id}
+                active={categoryId === category.id}
+                color={category.color || "var(--dc-accent)"}
+                onClick={() => setCategoryId(category.id)}
+              >
+                {category.name}
+              </FilterPill>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       {visible.length === 0 ? (
         <p style={{ color: "var(--dc-muted)", margin: 0 }}>
-          {filter === "liked"
+          {filter === "liked" && !categoryId
             ? "No liked items yet. Tap the heart on a listing to save it here."
-            : "Nothing listed right now."}
+            : filter === "liked" && categoryId
+              ? "No liked items in this category."
+              : categoryId
+                ? "Nothing in this category right now."
+                : "Nothing listed right now."}
         </p>
       ) : (
         <ul
@@ -159,34 +249,15 @@ export function DeclutterBrowse({
                     color: "inherit",
                   }}
                 >
-                  <div
+                  <h2
                     style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 8,
-                      alignItems: "baseline",
-                      justifyContent: "space-between",
+                      margin: 0,
+                      fontSize: "1.15rem",
+                      fontWeight: 600,
                     }}
                   >
-                    <h2
-                      style={{
-                        margin: 0,
-                        fontSize: "1.15rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {listing.title}
-                    </h2>
-                    <span
-                      style={{
-                        color: "var(--dc-accent)",
-                        fontWeight: 600,
-                        fontSize: 15,
-                      }}
-                    >
-                      {priceLabel(listing.price)}
-                    </span>
-                  </div>
+                    {listing.title}
+                  </h2>
                   <div
                     style={{
                       marginTop: 8,
@@ -229,9 +300,21 @@ export function DeclutterBrowse({
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    paddingRight: 8,
+                    gap: 4,
+                    flexShrink: 0,
+                    paddingRight: 12,
                   }}
                 >
+                  <span
+                    style={{
+                      color: "var(--dc-accent)",
+                      fontWeight: 600,
+                      fontSize: 15,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {priceLabel(listing.price)}
+                  </span>
                   <DeclutterLikeButton listingId={listing.id} />
                 </div>
               </div>
