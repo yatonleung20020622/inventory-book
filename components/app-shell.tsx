@@ -12,6 +12,8 @@ import {
   MenuOutlined,
   MenuUnfoldOutlined,
   ShopOutlined,
+  FileTextOutlined,
+  HeartOutlined,
   TagsOutlined,
   TagOutlined,
   TeamOutlined,
@@ -93,11 +95,23 @@ const baseNavItems = [
   },
 ];
 
-const adminNavItem = {
-  key: "/admin/users",
-  icon: <TeamOutlined />,
-  label: "Users",
-};
+const adminNavItems = [
+  {
+    key: "/admin/cv",
+    icon: <FileTextOutlined />,
+    label: "CV CMS",
+  },
+  {
+    key: "/admin/declutter",
+    icon: <HeartOutlined />,
+    label: "Declutter CMS",
+  },
+  {
+    key: "/admin/users",
+    icon: <TeamOutlined />,
+    label: "Users",
+  },
+];
 
 function SideNav({
   email,
@@ -117,7 +131,7 @@ function SideNav({
   const profileActive = selectedKey === "/profile";
   const displayName = username.trim() || "Account";
   const navItems =
-    role === "ADMIN" ? [...baseNavItems, adminNavItem] : baseNavItems;
+    role === "ADMIN" ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   // Drawer already shows "Inventory Book" in its header; skip the brand row there.
   const hideBrand = Boolean(onNavigate);
@@ -183,12 +197,13 @@ function SideNav({
                 </Link>
               ),
             };
-            // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | Users (admin)
+            // Group breaks: Dashboard | Travel | Selling | Items + Locations + Categories | admin CMS | Users
             if (
               item.key === "/dashboard" ||
               item.key === "/travel/places" ||
               item.key === "/sales/mine" ||
-              (item.key === "/categories" && role === "ADMIN")
+              (item.key === "/categories" && role === "ADMIN") ||
+              item.key === "/admin/declutter"
             ) {
               return [
                 menuItem,
@@ -308,7 +323,7 @@ export function AppShell({
 
   const isMobile = mounted ? !screens.lg : false;
   const navItems =
-    role === "ADMIN" ? [...baseNavItems, adminNavItem] : baseNavItems;
+    role === "ADMIN" ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   const selectedKey = pathname.startsWith("/profile")
     ? "/profile"

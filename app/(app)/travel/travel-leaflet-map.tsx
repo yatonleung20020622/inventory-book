@@ -150,7 +150,10 @@ export function TravelLeafletMap({
       if (!mapIsAlive(map) || !fogSvgRef.current || !fogHolesRef.current) return;
       const size = map.getSize();
       const topLeft = map.containerPointToLayerPoint([0, 0]);
-      L.DomUtil.setPosition(fogSvgRef.current, topLeft);
+      L.DomUtil.setPosition(
+        fogSvgRef.current as unknown as HTMLElement,
+        topLeft,
+      );
 
       const width = String(size.x);
       const height = String(size.y);

@@ -606,6 +606,111 @@ function wantsDemoSeed() {
   return value === "1" || value === "true" || value === "yes";
 }
 
+async function seedDeclutterListing(adminUserId: string) {
+  const existing = await prisma.declutterListing.findFirst({
+    select: { id: true },
+  });
+  if (existing) {
+    console.log("Declutter listing already present — skipped.");
+    return;
+  }
+
+  let category = await prisma.category.findFirst({
+    where: { userId: adminUserId },
+    orderBy: { name: "asc" },
+    select: { id: true },
+  });
+  if (!category) {
+    category = await prisma.category.create({
+      data: {
+        name: "Household",
+        color: "#0F6E56",
+        userId: adminUserId,
+      },
+      select: { id: true },
+    });
+  }
+
+  await prisma.declutterListing.create({
+    data: {
+      title: "Example desk lamp",
+      description:
+        "Generic example listing for the declutter board. Replace or delete this in Declutter CMS.",
+      condition: "Good",
+      price: "",
+      locationNote: "Example district — pickup only",
+      contactNote: "Message via the contact note in Declutter CMS.",
+      status: "AVAILABLE",
+      sortOrder: 0,
+      categoryId: category.id,
+    },
+  });
+  console.log("Seeded example declutter listing for /public/declutter.");
+}
+
+async function seedCvProfile() {
+  const existing = await prisma.cvProfile.findFirst({
+    select: { id: true },
+  });
+  if (existing) {
+    console.log("CV profile already present — skipped.");
+    return;
+  }
+
+  await prisma.cvProfile.create({
+    data: {
+      displayName: "Jane Example",
+      headline: "Full-Stack Developer",
+      summary:
+        "Example professional summary. Replace this text in CV CMS with your own background, strengths, and focus areas.",
+      phone: "+852 0000 0000",
+      whatsapp: "85200000000",
+      email: "hello@example.com",
+      websiteLabel: "Portfolio",
+      websiteUrl: "https://example.com",
+      ctaTitle: "Looking for freelance work?",
+      ctaBody: "Example call-to-action. Invite visitors to contact you here.",
+      ctaButtonLabel: "Get in Touch",
+      footerText: "© Example Name. Edit this footer in CV CMS.",
+      published: true,
+      experiences: {
+        create: [
+          {
+            company: "Example Corp",
+            role: "Software Engineer",
+            summary:
+              "Example role summary describing stack, team, and main responsibilities.",
+            bullets: JSON.stringify([
+              "Shipped an example feature for internal tools",
+            ]),
+            sortOrder: 0,
+          },
+        ],
+      },
+      educations: {
+        create: [
+          {
+            school: "Example University",
+            degree: "BSc Computer Science",
+            detail: "Example coursework or honors note.",
+            sortOrder: 0,
+          },
+        ],
+      },
+      skillGroups: {
+        create: [
+          {
+            title: "Skills",
+            items: JSON.stringify(["TypeScript", "React", "Next.js"]),
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+  console.log("Seeded example CV profile for /public/cv.");
+}
+
 async function main() {
   const admin = await upsertUser({
     email: "yatonleung20020622@gmail.com",
@@ -629,8 +734,11 @@ async function main() {
     `Seeded user: ${demoUser.username} <${demoUser.email}> role=${demoUser.role}`,
   );
 
+  await seedCvProfile();
+
   const seedDemo = wantsDemoSeed();
   if (!seedDemo) {
+    await seedDeclutterListing(admin.id);
     console.log(
       "Skipped fake demo inventory. Use SEED_DEMO=true or npm run db:seed:demo to include it.",
     );
@@ -645,6 +753,7 @@ async function main() {
   });
 
   if (existingSeedItems > 0 && !reset) {
+    await seedDeclutterListing(admin.id);
     console.log(
       `Demo inventory already present (${existingSeedItems} items). Set SEED_RESET=1 to recreate.`,
     );
@@ -662,6 +771,8 @@ async function main() {
   console.log(
     `Demo data: ${summary.locations} locations, ${summary.categories} categories, ${summary.items} items, ${summary.relations} relations, ${summary.listings} sale listings`,
   );
+  // After demo categories exist so the example listing can attach to one.
+  await seedDeclutterListing(admin.id);
   console.log("Log in as Andrew Leung / password (or the email).");
 }
 

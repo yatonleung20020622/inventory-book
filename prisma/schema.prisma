@@ -100,14 +100,15 @@ model ItemLocationChange {
 }
 
 model Category {
-  id        String         @id @default(cuid())
-  name      String
-  color     String         @default("")
-  userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     ItemCategory[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id                String             @id @default(cuid())
+  name              String
+  color             String             @default("")
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items             ItemCategory[]
+  declutterListings DeclutterListing[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@unique([userId, name])
   @@index([userId])
@@ -239,4 +240,102 @@ model TravelVisit {
 
   @@index([placeId])
   @@map("travel_visits")
+}
+
+model CvProfile {
+  id             String         @id @default(cuid())
+  displayName    String
+  headline       String         @default("")
+  summary        String         @default("") @db.Text
+  phone          String         @default("")
+  whatsapp       String         @default("")
+  email          String         @default("")
+  websiteLabel   String         @default("")
+  websiteUrl     String         @default("")
+  ctaTitle       String         @default("")
+  ctaBody        String         @default("") @db.Text
+  ctaButtonLabel String         @default("")
+  footerText     String         @default("") @db.Text
+  published      Boolean        @default(true)
+  experiences    CvExperience[]
+  educations     CvEducation[]
+  skillGroups    CvSkillGroup[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("cv_profile")
+}
+
+model CvExperience {
+  id         String    @id @default(cuid())
+  profileId  String
+  profile    CvProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company    String
+  role       String
+  summary    String    @default("") @db.Text
+  bullets    String    @default("[]") @db.Text
+  companyUrl String    @default("")
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([profileId])
+  @@map("cv_experiences")
+}
+
+model CvEducation {
+  id        String    @id @default(cuid())
+  profileId String
+  profile   CvProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  school    String
+  degree    String
+  detail    String    @default("") @db.Text
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([profileId])
+  @@map("cv_educations")
+}
+
+model CvSkillGroup {
+  id        String    @id @default(cuid())
+  profileId String
+  profile   CvProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title     String
+  items     String    @default("[]") @db.Text
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([profileId])
+  @@map("cv_skill_groups")
+}
+
+enum DeclutterStatus {
+  AVAILABLE
+  RESERVED
+  GONE
+  HIDDEN
+}
+
+model DeclutterListing {
+  id           String          @id @default(cuid())
+  title        String
+  description  String          @default("") @db.Text
+  condition    String          @default("")
+  price        String          @default("")
+  locationNote String          @default("")
+  contactNote  String          @default("")
+  status       DeclutterStatus @default(AVAILABLE)
+  sortOrder    Int             @default(0)
+  categoryId   String?
+  category     Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([sortOrder])
+  @@map("declutter_listings")
 }
