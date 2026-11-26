@@ -37,6 +37,9 @@ export const authConfig = {
       if (
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/items") ||
+        pathname.startsWith("/disposal") ||
+        pathname.startsWith("/lost") ||
+        pathname.startsWith("/lent") ||
         pathname.startsWith("/locations") ||
         pathname.startsWith("/location-history") ||
         pathname.startsWith("/travel") ||

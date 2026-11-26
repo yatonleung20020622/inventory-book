@@ -37,6 +37,8 @@ export type ItemListFilter =
   | "active"
   | "to_dispose"
   | "disposed"
+  | "lost"
+  | "lent"
   | "disposal"
   | "all";
 
@@ -65,6 +67,9 @@ export type ItemRecord = {
   disposalMethod: DisposalMethod;
   soldPrice: string;
   disposedAt: string;
+  lentTo: string;
+  dueDate: string;
+  custodyNotes: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -126,6 +131,9 @@ type DispositionRow = {
   disposalMethod: string;
   soldPrice: string;
   disposedAt: string;
+  lentTo: string;
+  dueDate: string;
+  custodyNotes: string;
 } | null;
 
 type ItemRow = {
@@ -222,6 +230,9 @@ function dispositionFromRow(row: DispositionRow): ItemDispositionFields {
     disposalMethod: normalizeDisposalMethod(row.disposalMethod),
     soldPrice: row.soldPrice.trim(),
     disposedAt: row.disposedAt.trim(),
+    lentTo: row.lentTo.trim(),
+    dueDate: row.dueDate.trim(),
+    custodyNotes: row.custodyNotes.trim(),
   };
 }
 
@@ -257,6 +268,9 @@ function toItemRecord(item: ItemRow): ItemRecord {
     disposalMethod: disposition.disposalMethod,
     soldPrice: disposition.soldPrice,
     disposedAt: disposition.disposedAt,
+    lentTo: disposition.lentTo,
+    dueDate: disposition.dueDate,
+    custodyNotes: disposition.custodyNotes,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
@@ -287,6 +301,9 @@ const itemInclude = {
       disposalMethod: true,
       soldPrice: true,
       disposedAt: true,
+      lentTo: true,
+      dueDate: true,
+      custodyNotes: true,
     },
   },
 } as const;
@@ -307,22 +324,38 @@ function listItemsWhere(userId: string, filter: ItemListFilter) {
       disposition: { disposalStatus: "disposed" },
     };
   }
+  if (filter === "lost") {
+    return {
+      userId,
+      disposition: { disposalStatus: "lost" },
+    };
+  }
+  if (filter === "lent") {
+    return {
+      userId,
+      disposition: { disposalStatus: "lent" },
+    };
+  }
   if (filter === "disposal") {
     return {
       userId,
       disposition: {
-        disposalStatus: { in: ["to_dispose", "disposed"] },
+        disposalStatus: {
+          in: ["to_dispose", "disposed"],
+        },
       },
     };
   }
-  // active: hide anything marked for disposal or already disposed
+  // active: hide dispose / lost / lent items
   return {
     userId,
     OR: [
       { disposition: null },
       {
         disposition: {
-          disposalStatus: { notIn: ["to_dispose", "disposed"] },
+          disposalStatus: {
+            notIn: ["to_dispose", "disposed", "lost", "lent"],
+          },
         },
       },
     ],
@@ -355,6 +388,9 @@ async function syncItemDisposition(
       disposalMethod: resolved.fields.disposalMethod,
       soldPrice: resolved.fields.soldPrice,
       disposedAt: resolved.fields.disposedAt,
+      lentTo: resolved.fields.lentTo,
+      dueDate: resolved.fields.dueDate,
+      custodyNotes: resolved.fields.custodyNotes,
     },
     update: {
       workingCondition: resolved.fields.workingCondition,
@@ -362,6 +398,9 @@ async function syncItemDisposition(
       disposalMethod: resolved.fields.disposalMethod,
       soldPrice: resolved.fields.soldPrice,
       disposedAt: resolved.fields.disposedAt,
+      lentTo: resolved.fields.lentTo,
+      dueDate: resolved.fields.dueDate,
+      custodyNotes: resolved.fields.custodyNotes,
     },
   });
 
@@ -479,6 +518,9 @@ export async function setItemDisposition(input: {
   disposalStatus?: string;
   disposalMethod?: string;
   soldPrice?: string;
+  lentTo?: string;
+  dueDate?: string;
+  custodyNotes?: string;
 }): Promise<ItemActionResult> {
   try {
     const userId = await requireUserId();
@@ -502,6 +544,9 @@ export async function setItemDisposition(input: {
         disposalStatus: input.disposalStatus,
         disposalMethod: input.disposalMethod,
         soldPrice: input.soldPrice,
+        lentTo: input.lentTo,
+        dueDate: input.dueDate,
+        custodyNotes: input.custodyNotes,
       },
       existing.disposition?.disposedAt ?? "",
     );
@@ -511,11 +556,13 @@ export async function setItemDisposition(input: {
 
     revalidatePath("/items");
     revalidatePath("/disposal");
+    revalidatePath("/lost");
+    revalidatePath("/lent");
     revalidatePath(`/items/${input.itemId}`);
     revalidatePath("/dashboard");
-    return { ok: true, message: "Disposal updated." };
+    return { ok: true, message: "Status updated." };
   } catch {
-    return { ok: false, message: "Failed to update disposal." };
+    return { ok: false, message: "Failed to update status." };
   }
 }
 
@@ -866,6 +913,9 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
             disposalMethod: true,
             soldPrice: true,
             disposedAt: true,
+            lentTo: true,
+            dueDate: true,
+            custodyNotes: true,
           },
         },
       },
@@ -909,6 +959,9 @@ export async function duplicateItem(id: string): Promise<ItemActionResult> {
                   disposalMethod: disposition.disposalMethod,
                   soldPrice: disposition.soldPrice,
                   disposedAt: disposition.disposedAt,
+                  lentTo: disposition.lentTo,
+                  dueDate: disposition.dueDate,
+                  custodyNotes: disposition.custodyNotes,
                 },
               },
             }

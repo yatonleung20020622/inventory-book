@@ -150,6 +150,9 @@ export function DisposalManager({ items }: DisposalManagerProps) {
         disposalStatus: values.disposalStatus ?? "",
         disposalMethod: values.disposalMethod ?? "",
         soldPrice: values.soldPrice ?? "",
+        lentTo: values.lentTo ?? "",
+        dueDate: values.dueDate ?? "",
+        custodyNotes: values.custodyNotes ?? "",
       });
       if (!result.ok) {
         message.error(result.message);
@@ -181,14 +184,24 @@ export function DisposalManager({ items }: DisposalManagerProps) {
         disposalStatus: "",
         disposalMethod: "",
         soldPrice: "",
+        lentTo: "",
+        dueDate: "",
+        custodyNotes: "",
       });
       if (!result.ok) {
         message.error(result.message);
         return;
       }
-      message.success("Disposal cleared.");
+      message.success("Status cleared.");
       router.refresh();
     });
+  }
+
+  function statusTagColor(status: ItemRecord["disposalStatus"]) {
+    if (status === "disposed") return "default";
+    if (status === "lost") return "volcano";
+    if (status === "lent") return "geekblue";
+    return "orange";
   }
 
   function statusTags(record: ItemRecord) {
@@ -200,11 +213,7 @@ export function DisposalManager({ items }: DisposalManagerProps) {
     return (
       <Space size={4} wrap>
         {disposal ? (
-          <Tag
-            color={record.disposalStatus === "disposed" ? "default" : "orange"}
-          >
-            {disposal}
-          </Tag>
+          <Tag color={statusTagColor(record.disposalStatus)}>{disposal}</Tag>
         ) : null}
         {condition ? (
           <Tag
@@ -232,8 +241,8 @@ export function DisposalManager({ items }: DisposalManagerProps) {
         <Dropdown
           menu={{
             items: [
-              { key: "edit-disposal", label: "Edit disposal" },
-              { key: "clear-disposal", label: "Clear disposal" },
+              { key: "edit-disposal", label: "Edit status" },
+              { key: "clear-disposal", label: "Clear status" },
             ],
             onClick: ({ key, domEvent }) => {
               domEvent.stopPropagation();

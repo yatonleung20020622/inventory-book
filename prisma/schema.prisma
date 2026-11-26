@@ -74,6 +74,9 @@ model ItemDisposition {
   disposalMethod   String   @default("") @map("disposal_method")
   soldPrice        String   @default("") @map("sold_price")
   disposedAt       String   @default("") @map("disposed_at")
+  lentTo           String   @default("") @map("lent_to")
+  dueDate          String   @default("") @map("due_date")
+  custodyNotes     String   @default("") @map("custody_notes") @db.Text
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

@@ -69,7 +69,9 @@ async function InventoryValueStats() {
         { disposition: null },
         {
           disposition: {
-            disposalStatus: { notIn: ["to_dispose", "disposed"] },
+            disposalStatus: {
+              notIn: ["to_dispose", "disposed", "lost", "lent"],
+            },
           },
         },
       ],
@@ -147,6 +149,7 @@ function BetaVersionCard() {
 }
 
 async function ForSaleSection() {
+  await connection();
   const listings = await listSharedSaleListings();
 
   return (

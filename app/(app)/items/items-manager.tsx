@@ -151,6 +151,13 @@ function filtersActive(filters: ItemFilters) {
   );
 }
 
+function disposalTagColor(status: ItemRecord["disposalStatus"]) {
+  if (status === "disposed") return "default";
+  if (status === "lost") return "volcano";
+  if (status === "lent") return "geekblue";
+  return "orange";
+}
+
 function ItemStatusTags({ item }: { item: ItemRecord }) {
   const disposal = disposalTagLabel(item.disposalStatus, item.disposalMethod);
   const condition =
@@ -163,7 +170,7 @@ function ItemStatusTags({ item }: { item: ItemRecord }) {
     <>
       {disposal ? (
         <Tag
-          color={item.disposalStatus === "disposed" ? "default" : "orange"}
+          color={disposalTagColor(item.disposalStatus)}
           style={{ marginInlineEnd: 0 }}
         >
           {disposal}
@@ -267,6 +274,9 @@ export function ItemsManager({
         disposalStatus: values.disposalStatus ?? "",
         disposalMethod: values.disposalMethod ?? "",
         soldPrice: values.soldPrice ?? "",
+        lentTo: values.lentTo ?? "",
+        dueDate: values.dueDate ?? "",
+        custodyNotes: values.custodyNotes ?? "",
       });
       if (!result.ok) {
         message.error(result.message);
@@ -445,13 +455,13 @@ export function ItemsManager({
             items: [
               {
                 key: "dispose",
-                label: record.disposalStatus ? "Edit disposal" : "Dispose",
+                label: record.disposalStatus ? "Edit status" : "Set status",
               },
               ...(record.disposalStatus
                 ? [
                     {
                       key: "clear-disposal",
-                      label: "Clear disposal",
+                      label: "Clear status",
                     },
                   ]
                 : []),
@@ -470,12 +480,15 @@ export function ItemsManager({
                     disposalStatus: "",
                     disposalMethod: "",
                     soldPrice: "",
+                    lentTo: "",
+                    dueDate: "",
+                    custodyNotes: "",
                   });
                   if (!result.ok) {
                     message.error(result.message);
                     return;
                   }
-                  message.success("Disposal cleared.");
+                  message.success("Status cleared.");
                   router.refresh();
                 });
               }

@@ -1,7 +1,12 @@
 export const WORKING_CONDITIONS = ["working", "not_working", "broken"] as const;
 export type WorkingCondition = (typeof WORKING_CONDITIONS)[number] | "";
 
-export const DISPOSAL_STATUSES = ["to_dispose", "disposed"] as const;
+export const DISPOSAL_STATUSES = [
+  "to_dispose",
+  "disposed",
+  "lost",
+  "lent",
+] as const;
 export type DisposalStatus = (typeof DISPOSAL_STATUSES)[number] | "";
 
 export const DISPOSAL_METHODS = [
@@ -17,6 +22,9 @@ export type ItemDispositionInput = {
   disposalStatus?: string | null;
   disposalMethod?: string | null;
   soldPrice?: string | null;
+  lentTo?: string | null;
+  dueDate?: string | null;
+  custodyNotes?: string | null;
 };
 
 export type ItemDispositionFields = {
@@ -25,11 +33,22 @@ export type ItemDispositionFields = {
   disposalMethod: DisposalMethod;
   soldPrice: string;
   disposedAt: string;
+  lentTo: string;
+  dueDate: string;
+  custodyNotes: string;
 };
 
 const WORKING_SET = new Set<string>(WORKING_CONDITIONS);
 const STATUS_SET = new Set<string>(DISPOSAL_STATUSES);
 const METHOD_SET = new Set<string>(DISPOSAL_METHODS);
+
+/** Statuses that mean the item is not currently "with you". */
+export const NON_ACTIVE_DISPOSAL_STATUSES = [
+  "to_dispose",
+  "disposed",
+  "lost",
+  "lent",
+] as const;
 
 export function normalizeWorkingCondition(
   value: string | null | undefined,
@@ -59,6 +78,9 @@ export function emptyDispositionFields(): ItemDispositionFields {
     disposalMethod: "",
     soldPrice: "",
     disposedAt: "",
+    lentTo: "",
+    dueDate: "",
+    custodyNotes: "",
   };
 }
 
@@ -71,9 +93,30 @@ export function resolveDispositionFields(
   const disposalStatus = normalizeDisposalStatus(input.disposalStatus);
   let disposalMethod = normalizeDisposalMethod(input.disposalMethod);
   let soldPrice = (input.soldPrice ?? "").trim();
+  let lentTo = (input.lentTo ?? "").trim();
+  let dueDate = (input.dueDate ?? "").trim();
+  let custodyNotes = (input.custodyNotes ?? "").trim();
 
   if (!disposalStatus) {
     disposalMethod = "";
+    lentTo = "";
+    dueDate = "";
+    custodyNotes = "";
+  }
+
+  // Lost / lent are custody states — clear dispose-only method/price.
+  if (disposalStatus === "lost" || disposalStatus === "lent") {
+    disposalMethod = "";
+    soldPrice = "";
+  }
+
+  if (disposalStatus !== "lent") {
+    lentTo = "";
+    dueDate = "";
+  }
+
+  if (disposalStatus !== "lost" && disposalStatus !== "lent") {
+    custodyNotes = "";
   }
 
   if (disposalMethod !== "sell") {
@@ -84,6 +127,13 @@ export function resolveDispositionFields(
     return {
       ok: false,
       message: "Sold price is required when sold on a 2nd platform.",
+    };
+  }
+
+  if (disposalStatus === "lent" && !lentTo) {
+    return {
+      ok: false,
+      message: "Who has it is required when the item is lent out.",
     };
   }
 
@@ -100,6 +150,9 @@ export function resolveDispositionFields(
       disposalMethod,
       soldPrice,
       disposedAt,
+      lentTo,
+      dueDate,
+      custodyNotes,
     },
   };
 }
@@ -110,7 +163,10 @@ export function dispositionIsEmpty(fields: ItemDispositionFields) {
     !fields.disposalStatus &&
     !fields.disposalMethod &&
     !fields.soldPrice &&
-    !fields.disposedAt
+    !fields.disposedAt &&
+    !fields.lentTo &&
+    !fields.dueDate &&
+    !fields.custodyNotes
   );
 }
 
@@ -133,6 +189,10 @@ export function disposalStatusLabel(value: DisposalStatus) {
       return "To dispose";
     case "disposed":
       return "Disposed";
+    case "lost":
+      return "Lost";
+    case "lent":
+      return "Lent out";
     default:
       return "";
   }
@@ -157,6 +217,8 @@ export function disposalTagLabel(
   status: DisposalStatus,
   method: DisposalMethod,
 ) {
+  if (status === "lost") return "Lost";
+  if (status === "lent") return "Lent out";
   if (status === "to_dispose") {
     if (method === "recycle") return "To recycle";
     if (method === "rubbish") return "To rubbish";

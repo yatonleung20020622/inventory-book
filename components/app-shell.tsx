@@ -5,7 +5,9 @@ import {
   CompassOutlined,
   DashboardOutlined,
   DeleteOutlined,
+  DisconnectOutlined,
   EnvironmentOutlined,
+  ExportOutlined,
   HistoryOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -93,6 +95,16 @@ const restNavItems = [
     key: "/items",
     icon: <AppstoreOutlined />,
     label: "Items",
+  },
+  {
+    key: "/lost",
+    icon: <DisconnectOutlined />,
+    label: "Lost",
+  },
+  {
+    key: "/lent",
+    icon: <ExportOutlined />,
+    label: "Lent out",
   },
   {
     key: "/disposal",

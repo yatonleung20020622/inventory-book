@@ -230,13 +230,14 @@ async function ItemDetails({
             }
           />
           <DetailRow
-            label="Disposal status"
+            label="Status"
             value={
               disposalTagLabel(item.disposalStatus, item.disposalMethod) ||
               disposalStatusLabel(item.disposalStatus) || <EmptyValue />
             }
           />
-          {item.disposalStatus ? (
+          {item.disposalStatus === "to_dispose" ||
+          item.disposalStatus === "disposed" ? (
             <DetailRow
               label="Disposal method"
               value={
@@ -254,6 +255,25 @@ async function ItemDetails({
             <DetailRow
               label="Disposed on"
               value={item.disposedAt || <EmptyValue />}
+            />
+          ) : null}
+          {item.disposalStatus === "lent" ? (
+            <>
+              <DetailRow
+                label="Lent to"
+                value={item.lentTo || <EmptyValue />}
+              />
+              <DetailRow
+                label="Due back"
+                value={item.dueDate || <EmptyValue />}
+              />
+            </>
+          ) : null}
+          {item.disposalStatus === "lost" ||
+          item.disposalStatus === "lent" ? (
+            <DetailRow
+              label="Notes"
+              value={item.custodyNotes || <EmptyValue />}
             />
           ) : null}
           <DetailRow
