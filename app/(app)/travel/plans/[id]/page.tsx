@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { getTravelPlan } from "@/lib/actions/travel-plans";
 import { TravelPlanDetail } from "./plan-detail";
 
@@ -21,7 +21,7 @@ async function PlanContent({ id }: { id: string }) {
 export default async function TravelPlanDetailPage({ params }: PageProps) {
   const { id } = await params;
   return (
-    <Suspense fallback={<PageLoading label="Loading plan" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading plan" variant="detail" />}>
       <PlanContent id={id} />
     </Suspense>
   );

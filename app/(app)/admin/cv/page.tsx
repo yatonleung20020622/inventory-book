@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { getCvForAdmin } from "@/lib/actions/cv";
 import { CvCmsManager } from "./cv-cms-manager";
 
@@ -22,7 +22,7 @@ async function CvCmsContent() {
 
 export default function AdminCvPage() {
   return (
-    <Suspense fallback={<PageLoading label="Loading CV CMS" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading CV CMS" variant="list" />}>
       <CvCmsContent />
     </Suspense>
   );

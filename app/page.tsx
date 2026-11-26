@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 async function HomeRedirect() {
   await connection();
@@ -14,7 +14,7 @@ async function HomeRedirect() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<PageLoading label="Loading" />}>
+    <Suspense fallback={<PageSkeleton label="Loading" variant="shell" />}>
       <HomeRedirect />
     </Suspense>
   );

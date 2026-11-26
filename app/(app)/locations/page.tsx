@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listLocations } from "@/lib/actions/locations";
 import { LocationsManager } from "./locations-manager";
 
@@ -11,7 +11,7 @@ async function LocationsContent() {
 export default function LocationsPage() {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading locations" variant="block" />}
+      fallback={<PageSkeleton label="Loading locations" variant="list" />}
     >
       <LocationsContent />
     </Suspense>

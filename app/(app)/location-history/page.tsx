@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listItemLocationChanges } from "@/lib/actions/item-location-changes";
 import { LocationHistoryTable } from "./location-history-table";
 
@@ -12,7 +12,7 @@ export default function LocationHistoryPage() {
   return (
     <Suspense
       fallback={
-        <PageLoading label="Loading location history" variant="block" />
+        <PageSkeleton label="Loading location history" variant="list" />
       }
     >
       <LocationHistoryContent />

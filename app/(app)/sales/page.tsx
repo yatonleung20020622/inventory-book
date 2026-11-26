@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listSharedSaleListings } from "@/lib/actions/sales";
 import { SellingNowTable } from "./selling-now-table";
 
@@ -17,7 +17,7 @@ export default function SellingNowPage() {
       <p style={{ color: "var(--muted)", marginBottom: 24 }}>
         Items currently posted for sale by everyone.
       </p>
-      <Suspense fallback={<PageLoading label="Loading listings" variant="block" />}>
+      <Suspense fallback={<PageSkeleton label="Loading listings" variant="list" />}>
         <SellingNowContent />
       </Suspense>
     </>

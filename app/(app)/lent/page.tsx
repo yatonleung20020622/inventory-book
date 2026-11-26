@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listItems } from "@/lib/actions/items";
 import { CustodyList } from "../items/custody-list";
 
@@ -10,7 +10,7 @@ async function LentContent() {
 
 export default function LentPage() {
   return (
-    <Suspense fallback={<PageLoading label="Loading lent items" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading lent items" variant="list" />}>
       <LentContent />
     </Suspense>
   );

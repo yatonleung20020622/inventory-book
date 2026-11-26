@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { APP_CHANNEL, APP_VERSION, getAppVersionLabel } from "@/lib/app-version";
 import { formatHkdTotal, sumItemValues } from "@/lib/item-price";
 import { listSharedSaleListings } from "@/lib/actions/sales";
@@ -189,13 +189,13 @@ export default function DashboardPage() {
       >
         <BetaVersionCard />
         <Suspense
-          fallback={<PageLoading label="Loading stats" variant="inline" />}
+          fallback={<PageSkeleton label="Loading stats" variant="inline" />}
         >
           <DashboardStats />
         </Suspense>
         <Suspense
           fallback={
-            <PageLoading label="Loading inventory value" variant="inline" />
+            <PageSkeleton label="Loading inventory value" variant="inline" />
           }
         >
           <InventoryValueStats />
@@ -203,7 +203,7 @@ export default function DashboardPage() {
       </div>
       <div style={{ marginTop: 32 }}>
         <Suspense
-          fallback={<PageLoading label="Loading for sale" variant="block" />}
+          fallback={<PageSkeleton label="Loading for sale" variant="block" />}
         >
           <ForSaleSection />
         </Suspense>

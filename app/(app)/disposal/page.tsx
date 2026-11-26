@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listItems } from "@/lib/actions/items";
 import { DisposalManager } from "./disposal-manager";
 
@@ -10,7 +10,7 @@ async function DisposalContent() {
 
 export default function DisposalPage() {
   return (
-    <Suspense fallback={<PageLoading label="Loading disposal" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading disposal" variant="list" />}>
       <DisposalContent />
     </Suspense>
   );

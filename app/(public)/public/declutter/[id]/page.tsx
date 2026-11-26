@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { getPublicDeclutterListing } from "@/lib/actions/declutter";
 import { DeclutterDetail } from "../declutter-detail";
 
@@ -52,7 +52,7 @@ export default async function PublicDeclutterDetailPage({ params }: PageProps) {
   return (
     <div className={`${display.variable} ${sans.variable}`}>
       <Suspense
-        fallback={<PageLoading label="Loading listing" variant="block" />}
+        fallback={<PageSkeleton label="Loading listing" variant="detail" />}
       >
         <DeclutterDetailContent id={id} />
       </Suspense>

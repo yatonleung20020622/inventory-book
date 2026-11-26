@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { prisma } from "@/lib/prisma";
 import { ResetPasswordForm } from "./reset-password-form";
 
@@ -83,7 +83,7 @@ export default function ProfilePage() {
         here.
       </p>
       <Suspense
-        fallback={<PageLoading label="Loading account" variant="block" />}
+        fallback={<PageSkeleton label="Loading account" variant="form" />}
       >
         <ProfileAccount />
       </Suspense>

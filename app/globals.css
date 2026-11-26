@@ -262,6 +262,29 @@ body {
   max-width: 100%;
 }
 
+/* Shared page skeleton */
+.page-skeleton-bone {
+  background: color-mix(in srgb, var(--foreground) 8%, var(--border-color));
+  animation: page-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes page-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-skeleton-bone {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* Shared page / Suspense loading animation */
 .page-loading-mark {
   position: relative;

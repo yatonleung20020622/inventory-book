@@ -3,7 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { CategoryTag } from "@/components/category-tag";
 import { MajorColorSwatch } from "@/components/major-color-swatch";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listCategories } from "@/lib/actions/categories";
 import { listItemRelations } from "@/lib/actions/item-relations";
 import { getItem, listItems } from "@/lib/actions/items";
@@ -317,7 +317,7 @@ export default function ItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<PageLoading label="Loading item" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading item" variant="detail" />}>
       <ItemDetails params={params} />
     </Suspense>
   );

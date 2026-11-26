@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listCategories } from "@/lib/actions/categories";
 import { listDeclutterListings } from "@/lib/actions/declutter";
 import { DeclutterCmsManager } from "./declutter-cms-manager";
@@ -30,7 +30,7 @@ async function DeclutterCmsContent() {
 export default function AdminDeclutterPage() {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading Declutter CMS" variant="block" />}
+      fallback={<PageSkeleton label="Loading Declutter CMS" variant="list" />}
     >
       <DeclutterCmsContent />
     </Suspense>

@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listTrainSessions } from "@/lib/actions/training";
 import { TrainingSessionsManager } from "./training-sessions";
 
@@ -13,7 +13,7 @@ async function TrainingContent() {
 export default function TrainingPage() {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading training" variant="block" />}
+      fallback={<PageSkeleton label="Loading training" variant="list" />}
     >
       <TrainingContent />
     </Suspense>

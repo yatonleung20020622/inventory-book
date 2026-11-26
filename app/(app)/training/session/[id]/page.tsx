@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import {
   getTrainSession,
   listTrainExercises,
@@ -28,7 +28,7 @@ export default async function TrainingSessionPage({ params }: PageProps) {
   const { id } = await params;
   return (
     <Suspense
-      fallback={<PageLoading label="Loading session" variant="block" />}
+      fallback={<PageSkeleton label="Loading session" variant="detail" />}
     >
       <SessionContent id={id} />
     </Suspense>

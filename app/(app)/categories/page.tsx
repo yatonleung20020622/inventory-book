@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listCategories } from "@/lib/actions/categories";
 import { CategoriesManager } from "./categories-manager";
 
@@ -11,7 +11,7 @@ async function CategoriesContent() {
 export default function CategoriesPage() {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading categories" variant="block" />}
+      fallback={<PageSkeleton label="Loading categories" variant="list" />}
     >
       <CategoriesContent />
     </Suspense>

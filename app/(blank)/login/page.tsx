@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<PageLoading label="Loading" variant="block" />}>
+    <Suspense fallback={<PageSkeleton label="Loading" variant="form" />}>
       <LoginForm />
     </Suspense>
   );

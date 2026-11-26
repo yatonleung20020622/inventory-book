@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listTravelPlans } from "@/lib/actions/travel-plans";
 import { TravelPlansManager } from "./plans-manager";
 
@@ -13,7 +13,7 @@ async function PlansContent() {
 export default function TravelPlansPage() {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading travel plans" variant="block" />}
+      fallback={<PageSkeleton label="Loading travel plans" variant="list" />}
     >
       <PlansContent />
     </Suspense>

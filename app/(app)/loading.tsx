@@ -1,5 +1,5 @@
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export default function AppLoading() {
-  return <PageLoading label="Loading" variant="page" />;
+  return <PageSkeleton label="Loading" variant="list" />;
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listSaleComments } from "@/lib/actions/sale-comments";
 import { getSaleListing } from "@/lib/actions/sales";
 import { formatSalePriceDisplay } from "@/lib/sale-price";
@@ -185,7 +185,7 @@ export default function SaleListingDetailPage({
 }) {
   return (
     <Suspense
-      fallback={<PageLoading label="Loading listing" variant="block" />}
+      fallback={<PageSkeleton label="Loading listing" variant="detail" />}
     >
       <SaleListingDetails params={params} />
     </Suspense>

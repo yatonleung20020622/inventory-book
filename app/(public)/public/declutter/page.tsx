@@ -2,7 +2,7 @@ import { Figtree, Literata } from "next/font/google";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listPublicDeclutterListings } from "@/lib/actions/declutter";
 import { DeclutterBrowse } from "./declutter-browse";
 
@@ -33,7 +33,7 @@ export default function PublicDeclutterPage() {
   return (
     <div className={`${display.variable} ${sans.variable}`}>
       <Suspense
-        fallback={<PageLoading label="Loading declutter" variant="block" />}
+        fallback={<PageSkeleton label="Loading declutter" variant="list" />}
       >
         <DeclutterContent />
       </Suspense>

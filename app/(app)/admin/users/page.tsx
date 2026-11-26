@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { listUsers } from "@/lib/actions/admin-users";
 import { UsersManager } from "./users-manager";
 
@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
       <p style={{ color: "var(--muted)", marginBottom: 24 }}>
         Manage accounts and roles. Admin only.
       </p>
-      <Suspense fallback={<PageLoading label="Loading users" variant="block" />}>
+      <Suspense fallback={<PageSkeleton label="Loading users" variant="list" />}>
         <UsersContent />
       </Suspense>
     </>

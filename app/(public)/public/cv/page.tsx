@@ -2,7 +2,7 @@ import { Fraunces, Source_Sans_3 } from "next/font/google";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { getPublishedCv } from "@/lib/actions/cv";
 import { CvUnavailable, CvView } from "./cv-view";
 
@@ -35,7 +35,7 @@ async function CvContent() {
 export default function PublicCvPage() {
   return (
     <div className={`${cvDisplay.variable} ${cvSans.variable}`}>
-      <Suspense fallback={<PageLoading label="Loading CV" variant="block" />}>
+      <Suspense fallback={<PageSkeleton label="Loading CV" variant="detail" />}>
         <CvContent />
       </Suspense>
     </div>
